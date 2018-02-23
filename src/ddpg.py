@@ -41,7 +41,7 @@ class DDPG:
             self.action_dim = 2
 
             self.old_state = np.zeros(
-                (self.lenth, self.depth), dtype='float32')
+                (self.length, self.depth), dtype='float32')
             self.old_action = np.ones(self.action_dim, dtype='float32')
             self.network_action = np.zeros(2, dtype='float32')
             self.noise_action = np.zeros(2, dtype='float32')
@@ -154,7 +154,7 @@ class DDPG:
                 q_gradient_batch, action_batch_for_gradients)
 
             # Now we can train the actor
-            self.actor_network.train(q_gradient_batch, state_batch, old_action)
+            self.actor_network.train(q_gradient_batch, state_batch, action_batch)
 
             # Save model if necessary
             if self.training_step > 0 and self.training_step % SAVE_STEP == 0:

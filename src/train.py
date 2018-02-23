@@ -37,9 +37,10 @@ def main():
     while not rospy.is_shutdown():
         if ros_handler.new_msg():
             if not ros_handler.is_episode_finished:
-                ros_handler.action = agent.action
+                ros_handler.action = agent.get_action(ros_handler.state)
 
-            agent.set_experience()
+            agent.set_experience(ros_handler.state, ros_handler.reward,
+                                 ros_handler.is_eipsode_finished)
 
             agent.learn()
 

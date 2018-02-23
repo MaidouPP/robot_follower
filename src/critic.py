@@ -106,98 +106,12 @@ class CriticNetwork:
 
         with tf.variable_scope('critic'):
 
-            weights_conv1 = create_variable([RECEPTIVE_FIELD1, RECEPTIVE_FIELD1, self.image_no, FILTER1],
-                                            RECEPTIVE_FIELD1 * RECEPTIVE_FIELD1 * self.image_no, "weights_conv1")
-            biases_conv1 = create_variable([FILTER1], RECEPTIVE_FIELD1 * RECEPTIVE_FIELD1 * self.image_no,
-                                           "biases_conv1")
-
-            weights_conv2 = create_variable([RECEPTIVE_FIELD2, RECEPTIVE_FIELD2, FILTER1, FILTER2],
-                                            RECEPTIVE_FIELD2 * RECEPTIVE_FIELD2 * FILTER1, "weights_conv2")
-            biases_conv2 = create_variable([FILTER2], RECEPTIVE_FIELD2 * RECEPTIVE_FIELD2 * FILTER1,
-                                           "biases_conv2")
-
-            weights_conv3 = create_variable([RECEPTIVE_FIELD3, RECEPTIVE_FIELD3, FILTER2, FILTER3],
-                                            RECEPTIVE_FIELD3 * RECEPTIVE_FIELD3 * FILTER2, "weights_conv3")
-            biases_conv3 = create_variable([FILTER3], RECEPTIVE_FIELD3 * RECEPTIVE_FIELD3 * FILTER2, "biases_conv3")
-
-            # weights_conv4 = create_variable([RECEPTIVE_FIELD4, RECEPTIVE_FIELD4, FILTER3, FILTER4],
-            #                                RECEPTIVE_FIELD4 * RECEPTIVE_FIELD4 * FILTER3, "weights_conv4")
-            # biases_conv4 = create_variable([FILTER4], RECEPTIVE_FIELD4 * RECEPTIVE_FIELD4 * FILTER3, "biases_conv4")
-
-            weights_actions = create_variable([self.action_size, FULLY_LAYER1_SIZE], self.fully_size)
-            weights_fully1 = create_variable([self.fully_size, FULLY_LAYER1_SIZE], self.fully_size)
-            biases_fully1 = create_variable([FULLY_LAYER1_SIZE], self.fully_size)
-
-            weights_fully2 = create_variable([FULLY_LAYER1_SIZE, FULLY_LAYER2_SIZE], FULLY_LAYER1_SIZE)
-            biases_fully2 = create_variable([FULLY_LAYER2_SIZE], FULLY_LAYER1_SIZE)
-
-            weights_final = create_variable_final([FULLY_LAYER2_SIZE, 1])
-            biases_final = create_variable_final([1])
-
-        # 4 Convolutional layers
-        conv1 = tf.nn.relu(tf.nn.conv2d(self.map_input, weights_conv1, strides=[1, STRIDE1, STRIDE1, 1],
-                                        padding='VALID') + biases_conv1)
-        conv2 = tf.nn.relu(tf.nn.conv2d(conv1, weights_conv2, strides=[1, STRIDE2, STRIDE2, 1], padding='VALID') +
-                           biases_conv2)
-        conv3 = tf.nn.relu(tf.nn.conv2d(conv2, weights_conv3, strides=[1, STRIDE3, STRIDE3, 1], padding='VALID') +
-                           biases_conv3)
-        # conv4 = tf.nn.relu(tf.nn.conv2d(conv3, weights_conv4, strides=[1, STRIDE4, STRIDE4, 1], padding='VALID') +
-        #                    biases_conv4)
-
-        # Reshape output tensor to a rank 1 tensor
-        # conv_flat = tf.reshape(conv4, [-1, self.fully_size])
-        conv_flat = tf.reshape(conv3, [-1, self.fully_size])
-
-        # 2 Fully connected layers
-        fully1 = tf.nn.relu(tf.matmul(conv_flat, weights_fully1) + tf.matmul(self.action_input, weights_actions) +
-                            biases_fully1)
-        fully2 = tf.nn.relu(tf.matmul(fully1, weights_fully2) + biases_fully2)
 
         return tf.matmul(fully2, weights_final) + biases_final
 
     def create_target_network(self):
 
-        weights_conv1 = self.ema_obj.average(self.critic_variables[0])
-        biases_conv1 = self.ema_obj.average(self.critic_variables[1])
-        weights_conv2 = self.ema_obj.average(self.critic_variables[2])
-        biases_conv2 = self.ema_obj.average(self.critic_variables[3])
-        weights_conv3 = self.ema_obj.average(self.critic_variables[4])
-        biases_conv3 = self.ema_obj.average(self.critic_variables[5])
-        # weights_conv4 = self.ema_obj.average(self.critic_variables[6])
-        # biases_conv4 = self.ema_obj.average(self.critic_variables[7])
-        # weights_actions = self.ema_obj.average(self.critic_variables[8])
-        # weights_fully1 = self.ema_obj.average(self.critic_variables[9])
-        # biases_fully1 = self.ema_obj.average(self.critic_variables[10])
-        # weights_fully2 = self.ema_obj.average(self.critic_variables[11])
-        # biases_fully2 = self.ema_obj.average(self.critic_variables[12])
-        # weights_final = self.ema_obj.average(self.critic_variables[13])
-        # biases_final = self.ema_obj.average(self.critic_variables[14])
-        weights_actions = self.ema_obj.average(self.critic_variables[6])
-        weights_fully1 = self.ema_obj.average(self.critic_variables[7])
-        biases_fully1 = self.ema_obj.average(self.critic_variables[8])
-        weights_fully2 = self.ema_obj.average(self.critic_variables[9])
-        biases_fully2 = self.ema_obj.average(self.critic_variables[10])
-        weights_final = self.ema_obj.average(self.critic_variables[11])
-        biases_final = self.ema_obj.average(self.critic_variables[12])
-
-        # 4 Convolutional layers
-        conv1 = tf.nn.relu(tf.nn.conv2d(self.map_input_target, weights_conv1, strides=[1, STRIDE1, STRIDE1, 1],
-                                        padding='VALID') + biases_conv1)
-        conv2 = tf.nn.relu(tf.nn.conv2d(conv1, weights_conv2, strides=[1, STRIDE2, STRIDE2, 1], padding='VALID') +
-                           biases_conv2)
-        conv3 = tf.nn.relu(tf.nn.conv2d(conv2, weights_conv3, strides=[1, STRIDE3, STRIDE3, 1], padding='VALID') +
-                           biases_conv3)
-        # conv4 = tf.nn.relu(tf.nn.conv2d(conv3, weights_conv4, strides=[1, STRIDE4, STRIDE4, 1], padding='VALID') +
-        #                    biases_conv4)
-
-        # Reshape output tensor to a rank 1 tensor
-        # conv_flat = tf.reshape(conv4, [-1, self.fully_size])
-        conv_flat = tf.reshape(conv3, [-1, self.fully_size])
-
-        # 2 Fully connected layers
-        fully1 = tf.nn.relu(tf.matmul(conv_flat, weights_fully1) + tf.matmul(self.action_input_target,
-                                                                             weights_actions) + biases_fully1)
-        fully2 = tf.nn.relu(tf.matmul(fully1, weights_fully2) + biases_fully2)
+        with tf.variable_scope('critic_target'):
 
         return tf.matmul(fully2, weights_final) + biases_final
 

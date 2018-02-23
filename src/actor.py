@@ -4,26 +4,6 @@ import utils
 from critic import create_variable
 from critic import create_variable_final
 
-# # Params of fully connected layers
-# FULLY_LAYER1_SIZE = 200
-# FULLY_LAYER2_SIZE = 200
-
-# # Params of conv layers
-# RECEPTIVE_FIELD1 = 4
-# RECEPTIVE_FIELD2 = 4
-# RECEPTIVE_FIELD3 = 4
-# # RECEPTIVE_FIELD4 = 3
-
-# STRIDE1 = 2
-# STRIDE2 = 2
-# STRIDE3 = 2
-# # STRIDE4 = 1
-
-# FILTER1 = 64
-# FILTER2 = 32
-# FILTER3 = 32
-# # FILTER4 = 64
-
 # How fast is learning
 LEARNING_RATE = 0.0005
 
@@ -177,10 +157,14 @@ class ActorNetwork:
 
         saver_target.restore(self.sess, filter_path)
 
-    def train(self, q_gradient_batch, state_batch, old_action):
+    def train(self, q_gradient_batch, state_batch, action_batch):
 
         # Train the actor net
-        self.sess.run(self.optimizer, feed_dict={self.action_input: old_action, self.q_gradient_input: q_gradient_batch, self.map_input: state_batch})
+        self.sess.run(self.optimizer, feed_dict={
+            self.action_input: old_action,
+            self.q_gradient_input: q_gradient_batch,
+            self.map_input: state_batch,
+            self.action_input: action_batch})
 
         # Update the target
         self.update_target()

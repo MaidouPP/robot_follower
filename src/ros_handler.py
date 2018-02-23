@@ -15,7 +15,7 @@ class RosHandler:
 
         self._depth = 4
         self._length = 662   # SICK TIM561 laser scanner dimension
-        self._laser_data = np.zeros((self._length, self._depth), dtype='float32')
+        self._state = np.zeros((self._length, self._depth), dtype='float32')
 
         self._reward = 0.0
         self._action = Twist()
@@ -40,7 +40,7 @@ class RosHandler:
 
         ranges = np.array(data.ranges)
         print ranges.shape()
-        self._laser_data = ranges.reshape((self._length, self._width))
+        self._state = ranges.reshape((self._length, self._width))
         self._new_msg_flag = True
 
     @property
@@ -57,6 +57,9 @@ class RosHandler:
             self._action.linear_x = linear_x
             self._action.angular_z = angular_z
 
+    @property
+    def state(self):
+        return self._state
 
     def new_msg(self):
         """

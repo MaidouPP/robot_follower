@@ -93,8 +93,8 @@ class DataManager:
         is_episode_finished = features['is_episode_finished']
 
         # reshape gridmaps
-        state = tf.reshape(state, [86, 86, 4])
-        next_state = tf.reshape(next_state, [86, 86, 4])
+        state = tf.reshape(state, [662, 4])
+        next_state = tf.reshape(next_state, [662, 4])
 
         # batch shuffling is done in a seperate thread
         state_batch, action_batch, reward_batch, next_state_batch, is_episode_finished_batch = tf.train.shuffle_batch(
