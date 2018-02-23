@@ -14,7 +14,7 @@ class RosHandler:
         self._init = False
 
         self._depth = 4
-        self._length = 662   # SICK TIM561 laser scanner
+        self._length = 662   # SICK TIM561 laser scanner dimension
         self._laser_data = np.zeros((self._length, self._depth), dtype='float32')
 
         self._reward = 0.0
