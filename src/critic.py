@@ -79,6 +79,9 @@ class CriticNetwork:
             self.action_input_target = tf.placeholder("float", [None, action_size])
             self.Q_output_target = self.create_target_network()
 
+            with tf.variable_scope("critic_target") as scope:
+                self.critic_target_variables = tf.get_collection(tf.GraphKeys.VARIABLES, scope=scope.name)
+
             # L2 Regularization for all Variables
             self.regularization = 0
             for variable in self.critic_variables:
@@ -106,14 +109,53 @@ class CriticNetwork:
 
         with tf.variable_scope('critic'):
 
+            conv1 = utils.conv(self.map_input, [1, 7, self.depth, 64], [1, 3])
+            conv1 = tf.nn.max_pool(conv1,
+                                   ksize=[1, 1, 3, 1],
+                                   strides=[1, 1, 1, 1],
+                                   padding='SAME')
 
-        return tf.matmul(fully2, weights_final) + biases_final
+            resnet = utils.resnet_block(conv1, [1, 3, conv1.get_shape()[-1], 64], self.is_training)
+            resnet = tf.nn.avg_pool(resnet,
+                                    ksize=[1, 1, 3, 1],
+                                    strides=[1, 1, 3, 1],
+                                    padding='SAME')
+
+            fc = tf.reshape(resnet, [resnet.get_shape()[0], -1])
+            fc = tf.concat([fc, self.action_input], axis=1)
+
+            fc1 = tf.contrib.layers.fully_connected(fc, 1024)
+            fc2 = tf.contrib.layers.fully_connected(fc1, 512)
+
+            out = tf.contrib.layers.fully_connected(fc2, 1)
+
+        return out
 
     def create_target_network(self):
 
         with tf.variable_scope('critic_target'):
 
-        return tf.matmul(fully2, weights_final) + biases_final
+            conv1 = utils.conv(self.map_input, [1, 7, self.depth, 64], [1, 3])
+            conv1 = tf.nn.max_pool(conv1,
+                                   ksize=[1, 1, 3, 1],
+                                   strides=[1, 1, 1, 1],
+                                   padding='SAME')
+
+            resnet = utils.resnet_block(conv1, [1, 3, conv1.get_shape()[-1], 64], self.is_training)
+            resnet = tf.nn.avg_pool(resnet,
+                                    ksize=[1, 1, 3, 1],
+                                    strides=[1, 1, 3, 1],
+                                    padding='SAME')
+
+            fc = tf.reshape(resnet, [resnet.get_shape()[0], -1])
+            fc = tf.concat([fc, self.action_input], axis=1)
+
+            fc1 = tf.contrib.layers.fully_connected(fc, 1024)
+            fc2 = tf.contrib.layers.fully_connected(fc1, 512)
+
+            out = tf.contrib.layers.fully_connected(fc2, 1)
+
+        return out
 
     def restore_pretrained_weights(self, filter_path):
 
@@ -146,9 +188,9 @@ class CriticNetwork:
     def train(self, y_batch, state_batch, action_batch):
 
         # Run optimizer and compute some summary values
-        td_error_value, _ = self.sess.run([self.td_error, self.optimizer], feed_dict={self.y_input: y_batch,
-                                                                                      self.map_input: state_batch,
-                                                                                      self.action_input: action_batch})
+        td_error_value, _ = self.sess.run([self.td_error, self.optimizer],
+                                          feed_dict={self.y_input: y_batch,
+                                                     self.map_input: state_batch,                                                                    self.action_input: action_batch})
 
         # Now update the target net
         self.update_target()
@@ -173,6 +215,10 @@ class CriticNetwork:
     def update_target(self):
 
         self.sess.run(self.compute_ema)
+        self.critic_target_variables = \
+            [self.critic_target_variables[i].assign \
+             (self.compute_ema.average(self.critic_variables[i]))]
+
 
     def get_action_gradient(self, state_batch, action_batch):
 

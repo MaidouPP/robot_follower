@@ -54,6 +54,7 @@ class ActorNetwork:
 
             # Create target actor network
             self.map_input_target = tf.placeholder("float", [None, 1, self.state_dim, self.depth])
+            self.action_input_target = tf.placeholder("float", [None, 2])
             self.action_output_target = self.create_target_network()
 
             with tf.variable_scope("actor_target") as scope:
@@ -209,10 +210,10 @@ class ActorNetwork:
 
         return actions
 
-    def target_evaluate(self, state_batch):
+    def target_evaluate(self, state_batch, action_batch):
 
         # Get action batch
-        actions = self.sess.run(self.action_output_target, feed_dict={self.map_input_target: state_batch})
+        actions = self.sess.run(self.action_output_target, feed_dict={self.map_input_target: state_batch, self.action_input_target: action_batch})
 
         # Create summaries for the target actions
         actions_mean = np.mean(np.asarray(actions, dtype=float), axis=0)
