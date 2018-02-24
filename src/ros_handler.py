@@ -5,6 +5,8 @@ import rospy
 import numpy as np
 from simulation_walk.msg import Laser4
 from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Point
+from nav_msgs.msg import Odometry
 
 
 class RosHandler:
@@ -25,9 +27,16 @@ class RosHandler:
             self._action.angular.z = 0
         self._action.linear.x = 1
         self._action.angular.z = 0.5
+        self._person_pos = np.zeros((2,))
+        self._robot_pos = np.zeros((2,))
 
-        self._sub = rospy.Subscriber(
-            "/simulation_walk/laser4", Laser4, self._input_callback)
+        self._sub_laser = rospy.Subscriber(
+            "/simulation_walk/laser4", Laser4, self._input_callback_laser)
+        self._sub_person_pos = rospy.Subscriber(
+            "/actor_pos", Point, self._input_callback_person_pos)
+        self._sub_robot_pos = rospy.Subscriber(
+            "/ground_truth/state", Odometry, self._input_callback_robot_pos)
+
         self._pub = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
 
         rospy.init_node("ros_handler", anonymous=True)
@@ -36,12 +45,23 @@ class RosHandler:
 
         self._publish_action()
 
-    def _input_callback(self, data):
-
+    def _input_callback_laser(self, data):
         ranges = np.array(data.ranges)
-        print ranges.shape()
-        self._state = ranges.reshape((self._length, self._width))
+        print ranges.shape
+        self._state = ranges.reshape((self._length, self._depth))
+        self._calculate_reward()
         self._new_msg_flag = True
+
+    def _input_callback_person_pos(self, data):
+        self._person_pos[0] = data.x
+        self._person_pos[1] = data.y
+
+    def _input_callback_robot_pos(self, data):
+        self._robot_pos[0] = data.pose.pose.position.x
+        self._robot_pos[1] = data.pose.pose.position.y
+
+    def _calculate_reward(self):
+
 
     @property
     def action(self):
