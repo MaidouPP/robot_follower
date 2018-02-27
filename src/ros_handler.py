@@ -9,6 +9,7 @@ from geometry_msgs.msg import Twist
 from geometry_msgs.msg import Point
 from nav_msgs.msg import Odometry
 from simulation_walk.msg import Laser4
+from std_msgs.msg import Bool
 
 
 class RosHandler:
@@ -39,10 +40,15 @@ class RosHandler:
         self._sub_robot_pos = rospy.Subscriber(
             "/ground_truth/state", Odometry, self._input_callback_robot_pos)
         self._sub_new_start = rospy.Subscriber(
-            "/reach_start", Point, self._input_callback_new_start)
+            "/reach_start", Point, self._gazebo_callback_new_start)
+        self._sub_end_traj = rospy.Subscriber(
+            "/end_traj", Bool, self._gazebo_callback_end_traj)
 
         self._pub_action = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
         self._pub_robot_pos = rospy.Publisher("/gazebo/set_model_state", ModelState, queue_size=10)
+        self._pub_test = rospy.Publisher("/end_of_episode", Bool, queue_size=10)
+        self._end_of_episode = Bool()
+        self._end_of_episode.data = True
 
         # cost_map = rospy.get_param('costmap')
         # self._cost_map = pickle.load(costmap)
@@ -68,12 +74,20 @@ class RosHandler:
         self._robot_pos[0] = data.pose.pose.position.x
         self._robot_pos[1] = data.pose.pose.position.y
 
-    def _input_callback_new_start(self, data):
+    def _gazebo_callback_new_start(self, data):
         msg = ModelState()
         msg.pose.position.x = self._person_pos[0]
         msg.pose.position.y = self._person_pos[1]
         msg.model_name = "freight"
+        # data: Point message
+        x, y = _calculate_start_pos(data)
         self._pub_robot_pos.publish(msg)
+
+    def _calculate_start_pos(self, target, actor_pos):
+        dx = target.x - actor_pos[0]
+        dy = target.y - actor_pos[1]
+        radius = random.uniform(0.3, 1)
+
 
     def _calculate_reward(self):
         pass
@@ -108,9 +122,10 @@ class RosHandler:
         return output
 
     def _publish_action(self):
-        rate = rospy.Rate(20)
+        rate = rospy.Rate(0.1)
         while not rospy.is_shutdown():
             self._pub_action.publish(self.action)
+            # self._pub_test.publish(self._end_of_episode)
             rate.sleep()
 
 
