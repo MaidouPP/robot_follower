@@ -33,12 +33,15 @@ class RosHandler:
         self._action.linear.x = 1
         self._action.angular.z = 0.5
         self._person_pos = np.zeros((2,))
+        self._person_target = np.zeros((2,))
         self._robot_pos = np.zeros((2,))
 
         self._sub_laser = rospy.Subscriber(
             "/simulation_walk/laser4", Laser4, self._input_callback_laser)
         self._sub_person_pos = rospy.Subscriber(
             "/actor_pos", Point, self._input_callback_person_pos)
+        self._sub_person_target = rospy.Subscriber(
+            "/actor_target", Point, self._input_callback_person_target)
         self._sub_robot_pos = rospy.Subscriber(
             "/ground_truth/state", Odometry, self._input_callback_robot_pos)
         self._sub_new_start = rospy.Subscriber(
@@ -74,6 +77,11 @@ class RosHandler:
         self._person_pos[0] = data.x
         self._person_pos[1] = data.y
 
+    def _input_callback_person_target(self, data):
+        self._person_target[0] = data.x
+        self._person_target[1] = data.y
+        print self._person_target
+
     def _input_callback_robot_pos(self, data):
         self._robot_pos[0] = data.pose.pose.position.x
         self._robot_pos[1] = data.pose.pose.position.y
@@ -93,6 +101,10 @@ class RosHandler:
         pass
 
     def _calculate_start_pos(self, target, actor_pos):
+        """
+        calculate the starting point for robot to follow
+        the person in the new round
+        """
         dx = target.x - actor_pos[0]
         dy = target.y - actor_pos[1]
         vec = np.array([dx, dy])
