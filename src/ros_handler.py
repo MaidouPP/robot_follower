@@ -3,6 +3,7 @@
 
 import cPickle as pickle
 import rospy
+import math
 import numpy as np
 import random
 import tf
@@ -108,8 +109,9 @@ class RosHandler:
         dx = target.x - actor_pos[0]
         dy = target.y - actor_pos[1]
         vec = np.array([dx, dy])
-        norm = np.linalg.norm(vec)
-        vec = vec / norm
+        # norm = np.linalg.norm(vec)
+        vec = self._normalize_vec(vec)
+        # vec = vec / norm
         ortho = np.array([vec[1], -vec[0]])
         success = False
         result = np.zeros((2, 1))
@@ -140,6 +142,13 @@ class RosHandler:
         check if this place is in safe zone for robot
         """
         pos_ = [pos[0], pos[1]]
+        if pos[0] > 10 or pos[0] < -10:
+            return False
+        elif pos[1] > 10 or pos[1] < -10:
+            return False
+        # may need to modify this part because
+        # it relates to what map resolution we are using
+        # and what map size...
         pos_ = np.array(pos_ + [10, 10]) * 100
         if self._cost_map[int(pos_[0]), int(pos_[1])] == 0:
             return True
@@ -147,7 +156,42 @@ class RosHandler:
             return False
 
     def _calculate_reward(self):
-        pass
+        v1 = self._person_target - self._person_pos
+        v2 = self._person_pos - self._robot_pos
+        v1_ = self._normalize_vec(v1)
+        v2_ = self._normalize_vec(v2)
+        ortho_v1 = np.array([v1_[1], -v1_[0]])
+
+        if not self._valid_pos(self._robot_pos):
+            self._end_of_episode = True
+            return -1000
+
+        if np.dot(v1_, v2_) < 0:
+            return 0
+        else:
+            distance = np.linalg.norm(v2)
+            if distance > 1 or distance < 0.35:
+                return 0
+            else:
+                if (self._calculate_angle(ortho_v1, v2_) < math.PI/4 and \
+                   self._calculate_angle(ortho_v1, v2_) > 0) or \
+                   (self._calculate_angle(-ortho_v1, v2_) < math.PI/4 and \
+                    self._calculate_start_pos(-ortho_v1, v2_) > 0):
+                       return 1
+                else:
+                    return 0.5
+
+    @staticmethod
+    def _calculate_angle(vec1, vec2):
+        norm1 = np.linalg.norm(vec1)
+        norm2 = np.linalg.norm(vec2)
+        return math.acos(np.dot(vec1, vec2) / (norm1*norm2))
+
+    @staticmethod
+    def _normalize_vec(vec):
+        norm = np.linalg.norm(vec)
+        vec = vec / norm
+        return vec
 
     @staticmethod
     def _yaw_to_quaternion(vec):
