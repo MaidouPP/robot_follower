@@ -48,13 +48,13 @@ class RosHandler:
         self._sub_new_start = rospy.Subscriber(
             "/new_start", Point, self._gazebo_callback_new_start)
         self._sub_end_traj = rospy.Subscriber(
-            "/end_traj", Bool, self._gazebo_callback_end_traj)
+            "/reach_dest", Bool, self._gazebo_callback_end_traj)
 
         self._pub_action = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
         self._pub_robot_pos = rospy.Publisher("/gazebo/set_model_state", ModelState, queue_size=10)
-        self._pub_test = rospy.Publisher("/end_of_episode", Bool, queue_size=10)
-        self._end_of_episode = Bool()
-        self._end_of_episode.data = True
+        self._pub_end = rospy.Publisher("/bump", Bool, queue_size=10)
+        self.is_episode_finished = False
+        # self._end_of_episode.data = True
 
         cost_map = rospy.get_param('costmap')
         with open(cost_map, 'rb') as pickle_file:
@@ -99,7 +99,7 @@ class RosHandler:
         self._calculate_start_pos(data, self._person_pos)
 
     def _gazebo_callback_end_traj(self, data):
-        pass
+        self.end_of_episode = True
 
     def _calculate_start_pos(self, target, actor_pos):
         """
@@ -163,7 +163,7 @@ class RosHandler:
         ortho_v1 = np.array([v1_[1], -v1_[0]])
 
         if not self._valid_pos(self._robot_pos):
-            self._end_of_episode = True
+            self.end_of_episode = True
             return -1000
 
         if np.dot(v1_, v2_) < 0:
@@ -185,7 +185,10 @@ class RosHandler:
     def _calculate_angle(vec1, vec2):
         norm1 = np.linalg.norm(vec1)
         norm2 = np.linalg.norm(vec2)
-        return math.acos(np.dot(vec1, vec2) / (norm1*norm2))
+        if norm1 and norm2:
+            return math.acos(np.dot(vec1, vec2) / (norm1*norm2))
+        else:
+            return 0
 
     @staticmethod
     def _normalize_vec(vec):
