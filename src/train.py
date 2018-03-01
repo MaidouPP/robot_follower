@@ -5,7 +5,7 @@ import rospy
 import os
 import tensorflow as tf
 from ddpg import DDPG
-from ros_handler import ROSHandler
+from ros_handler import RosHandler
 
 
 dir_path = os.path.dirname(os.path.realpath(__file__))

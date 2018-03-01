@@ -5,6 +5,9 @@ import os
 import numpy as np
 import tensorflow as tf
 import time
+from actor import ActorNetwork
+from critic import CriticNetwork
+from grad_inverter import GradInverter
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -17,6 +20,9 @@ TF_OUT_PATH = dir_path + '/../output'
 # experience data path
 EXP_PATH = dir_path + '/../exp'
 
+# those bounds are according to freight move_base
+A0_BOUNDS = [-0.8, 0.8]
+A1_BOUNDS = [-1.5, 1.5]
 
 class DDPG:
 
@@ -24,13 +30,13 @@ class DDPG:
                  pretrain = False,
                  net_path = None):
 
-        if not tf.gfile.Exists(TF_LOG_DIR):
-            tf.gfile.MakeDirs(TF_LOG_DIR)
-        if not tf.gfile.Exists(TF_OUT_DIR):
-            tf.gfile.MakeDirs(TF_OUT_DIR)
+        if not tf.gfile.Exists(TF_LOG_PATH):
+            tf.gfile.MakeDirs(TF_LOG_PATH)
+        if not tf.gfile.Exists(TF_OUT_PATH):
+            tf.gfile.MakeDirs(TF_OUT_PATH)
 
-        self.session = tf.session()
-        self.graph = self.session.graph()
+        self.session = tf.Session()
+        self.graph = self.session.graph
 
         with self.graph.as_default():
 

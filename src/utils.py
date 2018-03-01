@@ -13,8 +13,8 @@ def _get_variable(name,
     my wrapper of tf.get_variable
     """
     collections = [tf.GraphKeys.GLOBAL_VARIABLES]
-    return tf.get_varibale(name,
-                           shape=shape
+    return tf.get_variable(name,
+                           shape=shape,
                            initializer=initializer,
                            dtype=dtype,
                            regularizer=None,
@@ -22,7 +22,7 @@ def _get_variable(name,
 
 def conv(x,
          shape,
-         stride)
+         stride):
     """
     my wrapper of tf.nn.conv2d and tf.nn.bias_add together
     shape: height, width, in, out
@@ -32,7 +32,7 @@ def conv(x,
     initializer = tf.contrib.layers.xavier_initializer()
     weights = _get_variable('weights',
                             shape=shape,
-                            initializer=Initializer)
+                            initializer=initializer)
     bias = tf.get_variable('bias', [filters_out], 'float',
                            tf.constant_initializer(0.05, dtype='float'))
     x = tf.nn.conv2d(x, weights, [1, stride[0], stride[1], 1],

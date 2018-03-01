@@ -53,7 +53,7 @@ class RosHandler:
         self._pub_action = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
         self._pub_robot_pos = rospy.Publisher("/gazebo/set_model_state", ModelState, queue_size=10)
         self._pub_end = rospy.Publisher("/bump", Bool, queue_size=10)
-        self.is_episode_finished = False
+        self.end_of_episode = False
         # self._end_of_episode.data = True
 
         cost_map = rospy.get_param('costmap')
@@ -96,6 +96,7 @@ class RosHandler:
         # print "ever here?? 86"
         # print "=============== the target is: ", data
         # print "=============== the human isL ", self._person_pos
+        self.end_of_episode = False
         self._calculate_start_pos(data, self._person_pos)
 
     def _gazebo_callback_end_traj(self, data):
@@ -250,7 +251,7 @@ class RosHandler:
         return output
 
     def _publish_action(self):
-        rate = rospy.Rate(0.1)
+        rate = rospy.Rate(0.02)
         while not rospy.is_shutdown():
             self._pub_action.publish(self.action)
             # self._pub_test.publish(self._end_of_episode)
