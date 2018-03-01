@@ -69,7 +69,7 @@ class RosHandler:
 
     def _input_callback_laser(self, data):
         ranges = np.array(data.ranges)
-        print ranges.shape
+        # print ranges.shape
         self._state = ranges.reshape((self._length, self._depth))
         self._calculate_reward()
         self._new_msg_flag = True
@@ -81,7 +81,7 @@ class RosHandler:
     def _input_callback_person_target(self, data):
         self._person_target[0] = data.x
         self._person_target[1] = data.y
-        print self._person_target
+        # print self._person_target
 
     def _input_callback_robot_pos(self, data):
         self._robot_pos[0] = data.pose.pose.position.x
@@ -106,6 +106,8 @@ class RosHandler:
         calculate the starting point for robot to follow
         the person in the new round
         """
+        print "============> target is: ", target
+        print "------------> actor pos is:, ", actor_pos
         dx = target.x - actor_pos[0]
         dy = target.y - actor_pos[1]
         vec = np.array([dx, dy])
@@ -114,7 +116,7 @@ class RosHandler:
         # vec = vec / norm
         ortho = np.array([vec[1], -vec[0]])
         success = False
-        result = np.zeros((2, 1))
+        result = np.zeros((2,))
 
         while success is False:
 
@@ -125,6 +127,7 @@ class RosHandler:
             result[0] = temp[0] + noise * ortho[0]
             result[1] = temp[1] + noise * ortho[1]
 
+            print result
             success = self._valid_pos(result)
 
         msg = ModelState()
@@ -141,7 +144,7 @@ class RosHandler:
         """
         check if this place is in safe zone for robot
         """
-        pos_ = [pos[0], pos[1]]
+        pos_ = np.array([pos[0], pos[1]])
         if pos[0] > 10 or pos[0] < -10:
             return False
         elif pos[1] > 10 or pos[1] < -10:
@@ -149,8 +152,19 @@ class RosHandler:
         # may need to modify this part because
         # it relates to what map resolution we are using
         # and what map size...
-        pos_ = np.array(pos_ + [10, 10]) * 100
-        if self._cost_map[int(pos_[0]), int(pos_[1])] == 0:
+        # for now it limits to 2000*2000 map with real 20*20
+        pos_[0] = pos_[0] + 10
+        pos_[1] = -pos_[1] + 10
+        pos_ = pos_ * 100
+        # print pos_, " ", pos
+        # print self._cost_map[int(pos_[1]), int(pos_[0])]
+        vec = self._person_pos - self._robot_pos
+        distance = np.linalg.norm(vec)
+        print "=== pos_: ", pos_
+        print "--- pos: ", pos
+        if distance < 0.3:
+            return False
+        if self._cost_map[int(pos_[1]), int(pos_[0])] == 0:
             return True
         else:
             return False
@@ -164,6 +178,10 @@ class RosHandler:
 
         if not self._valid_pos(self._robot_pos):
             self.end_of_episode = True
+            msg = Bool()
+            msg.data = True
+            self._pub_end.publish(msg)
+
             return -1000
 
         if np.dot(v1_, v2_) < 0:
@@ -173,10 +191,10 @@ class RosHandler:
             if distance > 1 or distance < 0.35:
                 return 0
             else:
-                if (self._calculate_angle(ortho_v1, v2_) < math.PI/4 and \
+                if (self._calculate_angle(ortho_v1, v2_) < math.pi/4 and \
                    self._calculate_angle(ortho_v1, v2_) > 0) or \
-                   (self._calculate_angle(-ortho_v1, v2_) < math.PI/4 and \
-                    self._calculate_start_pos(-ortho_v1, v2_) > 0):
+                   (self._calculate_angle(-ortho_v1, v2_) < math.pi/4 and \
+                    self._calculate_angle(-ortho_v1, v2_) > 0):
                        return 1
                 else:
                     return 0.5
