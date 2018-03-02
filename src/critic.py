@@ -1,6 +1,7 @@
-import tensorflow as tf
 import math
 import numpy as np
+import utils
+import tensorflow as tf
 
 # Params of fully connected layers
 FULLY_LAYER1_SIZE = 200
@@ -53,7 +54,9 @@ class CriticNetwork:
             # Get input dimensions from ddpg
             self.image_size = image_size
             self.action_size = action_size
-            self.image_no = image_no
+            self.depth = image_no
+
+            self.is_training = True
 
             # Calculate the fully connected layer size
             height_layer1 = (image_size - RECEPTIVE_FIELD1)/STRIDE1 + 1
@@ -109,25 +112,36 @@ class CriticNetwork:
 
         with tf.variable_scope('critic'):
 
-            conv1 = utils.conv(self.map_input, [1, 7, self.depth, 64], [1, 3])
-            conv1 = tf.nn.max_pool(conv1,
+            with tf.variable_scope("conv1"):
+                conv1 = utils.conv(self.map_input,
+                                   [1, 7, self.depth, 64], [1, 3])
+                conv1 = tf.nn.max_pool(conv1,
                                    ksize=[1, 1, 3, 1],
                                    strides=[1, 1, 1, 1],
                                    padding='SAME')
 
-            resnet = utils.resnet_block(conv1, [1, 3, conv1.get_shape()[-1], 64], self.is_training)
-            resnet = tf.nn.avg_pool(resnet,
+            with tf.variable_scope("resnet"):
+                resnet = utils.resnet_block(conv1,
+                        [1, 3, conv1.get_shape()[-1], 64], self.is_training)
+                resnet = tf.nn.avg_pool(resnet,
                                     ksize=[1, 1, 3, 1],
                                     strides=[1, 1, 3, 1],
                                     padding='SAME')
 
-            fc = tf.reshape(resnet, [resnet.get_shape()[0], -1])
-            fc = tf.concat([fc, self.action_input], axis=1)
+            with tf.variable_scope("fc"):
+                tmp = resnet.get_shape().as_list()
+                shape_rest = tmp[1] * tmp[2] * tmp[3]
+                fc = tf.reshape(resnet, [tf.shape(resnet)[0], shape_rest])
+                fc = tf.concat([fc, self.action_input], axis=1)
 
-            fc1 = tf.contrib.layers.fully_connected(fc, 1024)
-            fc2 = tf.contrib.layers.fully_connected(fc1, 512)
+            with tf.variable_scope("fc1"):
+                fc1 = tf.contrib.layers.fully_connected(fc, 1024)
 
-            out = tf.contrib.layers.fully_connected(fc2, 1)
+            with tf.variable_scope("fc2"):
+                fc2 = tf.contrib.layers.fully_connected(fc1, 512)
+
+            with tf.variable_scope("fc3"):
+                out = tf.contrib.layers.fully_connected(fc2, 1)
 
         return out
 
@@ -135,25 +149,36 @@ class CriticNetwork:
 
         with tf.variable_scope('critic_target'):
 
-            conv1 = utils.conv(self.map_input, [1, 7, self.depth, 64], [1, 3])
-            conv1 = tf.nn.max_pool(conv1,
+            with tf.variable_scope("conv1"):
+                conv1 = utils.conv(self.map_input,
+                                   [1, 7, self.depth, 64], [1, 3])
+                conv1 = tf.nn.max_pool(conv1,
                                    ksize=[1, 1, 3, 1],
                                    strides=[1, 1, 1, 1],
                                    padding='SAME')
 
-            resnet = utils.resnet_block(conv1, [1, 3, conv1.get_shape()[-1], 64], self.is_training)
-            resnet = tf.nn.avg_pool(resnet,
+            with tf.variable_scope("resnet"):
+                resnet = utils.resnet_block(conv1,
+                        [1, 3, conv1.get_shape()[-1], 64], self.is_training)
+                resnet = tf.nn.avg_pool(resnet,
                                     ksize=[1, 1, 3, 1],
                                     strides=[1, 1, 3, 1],
                                     padding='SAME')
 
-            fc = tf.reshape(resnet, [resnet.get_shape()[0], -1])
-            fc = tf.concat([fc, self.action_input], axis=1)
+            with tf.variable_scope("fc"):
+                tmp = resnet.get_shape().as_list()
+                shape_rest = tmp[1] * tmp[2] * tmp[3]
+                fc = tf.reshape(resnet, [tf.shape(resnet)[0], shape_rest])
+                fc = tf.concat([fc, self.action_input], axis=1)
 
-            fc1 = tf.contrib.layers.fully_connected(fc, 1024)
-            fc2 = tf.contrib.layers.fully_connected(fc1, 512)
+            with tf.variable_scope("fc1"):
+                fc1 = tf.contrib.layers.fully_connected(fc, 1024)
 
-            out = tf.contrib.layers.fully_connected(fc2, 1)
+            with tf.variable_scope("fc2"):
+                fc2 = tf.contrib.layers.fully_connected(fc1, 512)
+
+            with tf.variable_scope("fc3"):
+                out = tf.contrib.layers.fully_connected(fc2, 1)
 
         return out
 

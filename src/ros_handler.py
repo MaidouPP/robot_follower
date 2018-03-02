@@ -50,7 +50,7 @@ class RosHandler:
         self._sub_end_traj = rospy.Subscriber(
             "/reach_dest", Bool, self._gazebo_callback_end_traj)
 
-        self._pub_action = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
+        self._pub_action = rospy.Publisher("/cmd_vel_handler", Twist, queue_size=10)
         self._pub_robot_pos = rospy.Publisher("/gazebo/set_model_state", ModelState, queue_size=10)
         self._pub_end = rospy.Publisher("/bump", Bool, queue_size=10)
         self.end_of_episode = False
@@ -65,7 +65,7 @@ class RosHandler:
 
         self._new_msg_flag = False
 
-        self._publish_action()
+        # self._publish_action()
 
     def _input_callback_laser(self, data):
         ranges = np.array(data.ranges)

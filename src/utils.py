@@ -44,26 +44,28 @@ def resnet_block(x,
                  is_training=True):
 
     filters_out = shape[-1]
-    # first stage
-    shortcut = x
-    x = conv(x, shape, 1)
-    x = tf.contrib.layers.batch_norm(x,
-                                     center=True,
-                                     scale=True,
-                                     is_training=is_training,
-                                     scope='bn')
-    shortcut2 = x
-    x = x + shortcut
-    x = tf.nn.relu(x)
+    with tf.variable_scope("stage1"):
+        # first stage
+        shortcut = x
+        x = conv(x, shape, [1, 1])
+        x = tf.contrib.layers.batch_norm(x,
+                                         center=True,
+                                         scale=True,
+                                         is_training=is_training,
+                                         scope='bn')
+        shortcut2 = x
+        x = x + shortcut
+        x = tf.nn.relu(x)
 
     # second stage
-    x = conv(x, shape, 1)
-    x = tf.contrib.layers.batch_norm(x,
-                                     center=True,
-                                     scale=True,
-                                     is_training=is_training,
-                                     scope='bn')
-    x = shortcut2 + x
-    x = tf.nn.relu(x)
+    with tf.variable_scope("stage2"):
+        x = conv(x, shape, [1, 1])
+        x = tf.contrib.layers.batch_norm(x,
+                                         center=True,
+                                         scale=True,
+                                         is_training=is_training,
+                                         scope='bn')
+        x = shortcut2 + x
+        x = tf.nn.relu(x)
 
     return x

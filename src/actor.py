@@ -86,14 +86,18 @@ class ActorNetwork:
                                        padding='SAME')
 
             with tf.variable_scope("resnet"):
-                resnet = utils.resnet_block(conv1, [1, 3, conv1.get_shape()[-1], 64], self.is_training)
+                resnet = utils.resnet_block(conv1, [1, 3,
+                               conv1.get_shape().as_list()[-1], 64], self.is_training)
                 resnet = tf.nn.avg_pool(resnet,
                                         ksize=[1, 1, 3, 1],
                                         strides=[1, 1, 3, 1],
                                         padding='SAME')
 
             with tf.variable_scope("fc"):
-                fc = tf.reshape(resnet, [resnet.get_shape()[0], -1])
+                tmp = resnet.get_shape().as_list()
+                # !!! very dirty method... shixin
+                shape_rest = tmp[1] * tmp[2] * tmp[3]
+                fc = tf.reshape(resnet, [tf.shape(resnet)[0], shape_rest])
                 fc = tf.concat([fc, self.action_input], axis=1)
 
             with tf.variable_scope("fc1"):
@@ -123,14 +127,18 @@ class ActorNetwork:
                                        padding='SAME')
 
             with tf.variable_scope("resnet"):
-                resnet = utils.resnet_block(conv1, [1, 3, conv1.get_shape()[-1], 64], self.is_training)
+                resnet = utils.resnet_block(conv1, [1, 3,
+                               conv1.get_shape().as_list()[-1], 64], self.is_training)
                 resnet = tf.nn.avg_pool(resnet,
                                         ksize=[1, 1, 3, 1],
                                         strides=[1, 1, 3, 1],
                                         padding='SAME')
 
             with tf.variable_scope("fc"):
-                fc = tf.reshape(resnet, [resnet.get_shape()[0], -1])
+                tmp = resnet.get_shape().as_list()
+                # !!! very dirty method... shixin
+                shape_rest = tmp[1] * tmp[2] * tmp[3]
+                fc = tf.reshape(resnet, [tf.shape(resnet)[0], shape_rest])
                 fc = tf.concat([fc, self.action_input], axis=1)
 
             with tf.variable_scope("fc1"):
@@ -179,7 +187,6 @@ class ActorNetwork:
 
         # Train the actor net
         self.sess.run(self.optimizer, feed_dict={
-            self.action_input: old_action,
             self.q_gradient_input: q_gradient_batch,
             self.map_input: state_batch,
             self.action_input: action_batch})

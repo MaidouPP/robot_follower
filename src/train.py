@@ -30,10 +30,12 @@ def main():
 
     agent = DDPG()
 
+    print "========================== finish ddpg init?"
     rospy.init_node("robot_follower", anonymous=True)
 
     ros_handler = ROSHandler()
 
+    print "============================ here??"
     while not rospy.is_shutdown():
         if ros_handler.new_msg():
             if not ros_handler.is_episode_finished:

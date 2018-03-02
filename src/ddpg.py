@@ -7,6 +7,7 @@ import tensorflow as tf
 import time
 from actor import ActorNetwork
 from critic import CriticNetwork
+from data_manager import DataManager
 from grad_inverter import GradInverter
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -64,24 +65,27 @@ class DDPG:
             self.summary_op = tf.summary.merge_all()
             self.summary_writer = tf.summary.FileWriter(TF_LOG_PATH)
 
+            print "here?????????????? 68"
             # Initialize actor and critic networks
             self.actor_network = ActorNetwork(self.length,
-                                              self.depth,
                                               self.action_dim,
+                                              self.depth,
                                               self.session,
                                               self.summary_writer)
             self.critic_network = CriticNetwork(self.length,
-                                                self.depth,
                                                 self.action_dim,
+                                                self.depth,
                                                 self.session,
                                                 self.summary_writer)
 
+            print "here?????????????? 81"
             # Initialize the saver to save the network params
             self.saver = tf.train.Saver()
 
             # initialize the experience data manger
             self.data_manager = DataManager(self.batch_size, EXP_PATH, self.session)
 
+            print "here?????????????? 88"
             # Uncomment if collecting a buffer for the autoencoder
             # self.buffer = deque()
 
@@ -93,9 +97,11 @@ class DDPG:
             else:
                 self.session.run(tf.initialize_all_variables())
 
+            print "here?????????????? 99"
             tf.train.start_queue_runners(sess=self.session)
             time.sleep(1)
 
+            print "here?????????????? 103"
             # Initialize a random process the Ornstein-Uhlenbeck process for action exploration
             self.exploration_noise = OUNoise(self.action_dim, MU, THETA, SIGMA)
             self.noise_flag = True

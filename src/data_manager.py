@@ -85,11 +85,11 @@ class DataManager:
             'is_episode_finished': tf.FixedLenFeature([], tf.int64)})
 
         state = tf.decode_raw(features['state'], tf.uint8)
-        state.set_shape([86*86*4])
+        state.set_shape([662*4])
         action = features['action']
         reward = features['reward']
         next_state = tf.decode_raw(features['next_state'], tf.uint8)
-        next_state.set_shape([86*86*4])
+        next_state.set_shape([662*4])
         is_episode_finished = features['is_episode_finished']
 
         # reshape gridmaps
