@@ -9,6 +9,7 @@ from actor import ActorNetwork
 from critic import CriticNetwork
 from data_manager import DataManager
 from grad_inverter import GradInverter
+from ou_noise import OUNoise
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -21,9 +22,26 @@ TF_OUT_PATH = dir_path + '/../output'
 # experience data path
 EXP_PATH = dir_path + '/../exp'
 
+# path to trained net files
+NET_SAVE_PATH = dir_path + '../weights'
+
+# How does our noise behave (MU = Center value, THETA = How strong is noise pulled to MU, SIGMA = Variance of noise)
+MU = 0.0
+THETA = 0.15
+SIGMA = 0.20
+
 # those bounds are according to freight move_base
 A0_BOUNDS = [-0.8, 0.8]
 A1_BOUNDS = [-1.5, 1.5]
+
+# Max training step with noise
+MAX_NOISE_STEP = 300000
+
+# How often are we saving the net
+SAVE_STEP = 400
+
+# How big is our discount factor for rewards
+GAMMA = 0.99
 
 class DDPG:
 
@@ -41,7 +59,7 @@ class DDPG:
 
         with self.graph.as_default():
 
-            self.batch_size = 32
+            self.batch_size = 1
 
             self.depth = 4
             self.length = 662
@@ -65,7 +83,6 @@ class DDPG:
             self.summary_op = tf.summary.merge_all()
             self.summary_writer = tf.summary.FileWriter(TF_LOG_PATH)
 
-            print "here?????????????? 68"
             # Initialize actor and critic networks
             self.actor_network = ActorNetwork(self.length,
                                               self.action_dim,
@@ -78,14 +95,12 @@ class DDPG:
                                                 self.session,
                                                 self.summary_writer)
 
-            print "here?????????????? 81"
             # Initialize the saver to save the network params
             self.saver = tf.train.Saver()
 
             # initialize the experience data manger
             self.data_manager = DataManager(self.batch_size, EXP_PATH, self.session)
 
-            print "here?????????????? 88"
             # Uncomment if collecting a buffer for the autoencoder
             # self.buffer = deque()
 
@@ -97,11 +112,9 @@ class DDPG:
             else:
                 self.session.run(tf.initialize_all_variables())
 
-            print "here?????????????? 99"
             tf.train.start_queue_runners(sess=self.session)
             time.sleep(1)
 
-            print "here?????????????? 103"
             # Initialize a random process the Ornstein-Uhlenbeck process for action exploration
             self.exploration_noise = OUNoise(self.action_dim, MU, THETA, SIGMA)
             self.noise_flag = True
@@ -127,8 +140,8 @@ class DDPG:
                 next_state_batch, \
                 is_episode_finished_batch = self.data_manager.get_next_batch()
 
-            state_batch = np.divide(state_batch, 100.0)
-            next_state_batch = np.divide(next_state_batch, 100.0)
+            state_batch = np.divide(state_batch, 10.0)
+            next_state_batch = np.divide(next_state_batch, 10.0)
 
             # Are we visualizing the first state batch for debugging?
             # If so: We have to scale up the values for grey scale before plotting
@@ -143,7 +156,7 @@ class DDPG:
             # Calculate y for the td_error of the critic
             y_batch = []
             next_action_batch = self.actor_network.target_evaluate(
-                next_state_batch)
+                next_state_batch, action_batch)
             q_value_batch = self.critic_network.target_evaluate(
                 next_state_batch, next_action_batch)
 
@@ -159,7 +172,7 @@ class DDPG:
             # Get the action batch so we can calculate the action gradient with it
             # Then get the action gradient batch and adapt the gradient with the gradient inverting method
             action_batch_for_gradients = self.actor_network.evaluate(
-                state_batch)
+                state_batch, action_batch)
             q_gradient_batch = self.critic_network.get_action_gradient(
                 state_batch, action_batch_for_gradients)
             q_gradient_batch = self.grad_inv.invert(
@@ -176,16 +189,20 @@ class DDPG:
             # Update time step
             self.training_step += 1
 
+            if self.training_step % 200 == 0:
+                print "step: ", self.training_step
+
         self.data_manager.check_for_enqueue()
 
-    def get_action(self, state):
+    def get_action(self, state, old_action):
 
         # normalize the state
         state = state.astype(float)
-        state = np.divide(state, 100.0)
+        state = np.divide(state, 10.0)
 
         # Get the action
-        self.action = self.actor_network.get_action(state)
+        self.action = self.actor_network.get_action(state, old_action)
+        self.action = self.action.reshape((2,))
 
         # Are we using noise?
         if self.noise_flag:
@@ -210,6 +227,9 @@ class DDPG:
         if self.first_experience:
             self.first_experience = False
         else:
+            state.astype('float32')
+            self.old_action.astype('float32')
+            self.old_state.astype('float32')
             self.data_manager.store_experience_to_file(self.old_state, self.old_action, reward, state,
                                                        is_episode_finished)
 

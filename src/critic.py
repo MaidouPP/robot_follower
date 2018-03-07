@@ -58,27 +58,28 @@ class CriticNetwork:
 
             self.is_training = True
 
-            # Calculate the fully connected layer size
-            height_layer1 = (image_size - RECEPTIVE_FIELD1)/STRIDE1 + 1
-            height_layer2 = (height_layer1 - RECEPTIVE_FIELD2)/STRIDE2 + 1
-            height_layer3 = (height_layer2 - RECEPTIVE_FIELD3)/STRIDE3 + 1
+            # # Calculate the fully connected layer size
+            # height_layer1 = (image_size - RECEPTIVE_FIELD1)/STRIDE1 + 1
+            # height_layer2 = (height_layer1 - RECEPTIVE_FIELD2)/STRIDE2 + 1
+            # height_layer3 = (height_layer2 - RECEPTIVE_FIELD3)/STRIDE3 + 1
             # height_layer4 = (height_layer3 - RECEPTIVE_FIELD4)/STRIDE4 + 1
             # self.fully_size = (height_layer4**2) * FILTER4
-            self.fully_size = (height_layer3**2) * FILTER3
+            # self.fully_size = (height_layer3**2) * FILTER3
 
             # Create critic network
-            self.map_input = tf.placeholder("float", [None, image_size, image_size, image_no])
+            self.map_input = tf.placeholder("float", [None, 1, image_size, image_no])
             self.action_input = tf.placeholder("float", [None, action_size], name="action_input")
             self.Q_output = self.create_network()
 
             # Get all the variables in the critic network for exponential moving average, create ema op
             with tf.variable_scope("critic") as scope:
-                self.critic_variables = tf.get_collection(tf.GraphKeys.VARIABLES, scope=scope.name)
+                self.critic_variables = tf.get_collection(tf.GraphKeys.VARIABLES,
+                                                          scope=scope.name)
             self.ema_obj = tf.train.ExponentialMovingAverage(decay=TARGET_DECAY)
             self.compute_ema = self.ema_obj.apply(self.critic_variables)
 
             # Create target actor network
-            self.map_input_target = tf.placeholder("float", [None, image_size, image_size, image_no])
+            self.map_input_target = tf.placeholder("float", [None, 1, image_size, image_no])
             self.action_input_target = tf.placeholder("float", [None, action_size])
             self.Q_output_target = self.create_target_network()
 
@@ -114,15 +115,15 @@ class CriticNetwork:
 
             with tf.variable_scope("conv1"):
                 conv1 = utils.conv(self.map_input,
-                                   [1, 7, self.depth, 64], [1, 3])
+                                   [1, 7, self.depth, 32], [1, 3])
                 conv1 = tf.nn.max_pool(conv1,
                                    ksize=[1, 1, 3, 1],
-                                   strides=[1, 1, 1, 1],
+                                   strides=[1, 1, 3, 1],
                                    padding='SAME')
 
             with tf.variable_scope("resnet"):
                 resnet = utils.resnet_block(conv1,
-                        [1, 3, conv1.get_shape()[-1], 64], self.is_training)
+                        [1, 3, conv1.get_shape()[-1], 32], self.is_training)
                 resnet = tf.nn.avg_pool(resnet,
                                     ksize=[1, 1, 3, 1],
                                     strides=[1, 1, 3, 1],
@@ -135,13 +136,10 @@ class CriticNetwork:
                 fc = tf.concat([fc, self.action_input], axis=1)
 
             with tf.variable_scope("fc1"):
-                fc1 = tf.contrib.layers.fully_connected(fc, 1024)
+                fc1 = tf.contrib.layers.fully_connected(fc, 64)
 
-            with tf.variable_scope("fc2"):
-                fc2 = tf.contrib.layers.fully_connected(fc1, 512)
-
-            with tf.variable_scope("fc3"):
-                out = tf.contrib.layers.fully_connected(fc2, 1)
+            with tf.variable_scope("out"):
+                out = tf.contrib.layers.fully_connected(fc1, 1)
 
         return out
 
@@ -150,16 +148,16 @@ class CriticNetwork:
         with tf.variable_scope('critic_target'):
 
             with tf.variable_scope("conv1"):
-                conv1 = utils.conv(self.map_input,
-                                   [1, 7, self.depth, 64], [1, 3])
+                conv1 = utils.conv(self.map_input_target,
+                                   [1, 7, self.depth, 32], [1, 3])
                 conv1 = tf.nn.max_pool(conv1,
                                    ksize=[1, 1, 3, 1],
-                                   strides=[1, 1, 1, 1],
+                                   strides=[1, 1, 3, 1],
                                    padding='SAME')
 
             with tf.variable_scope("resnet"):
                 resnet = utils.resnet_block(conv1,
-                        [1, 3, conv1.get_shape()[-1], 64], self.is_training)
+                        [1, 3, conv1.get_shape()[-1], 32], self.is_training)
                 resnet = tf.nn.avg_pool(resnet,
                                     ksize=[1, 1, 3, 1],
                                     strides=[1, 1, 3, 1],
@@ -169,16 +167,13 @@ class CriticNetwork:
                 tmp = resnet.get_shape().as_list()
                 shape_rest = tmp[1] * tmp[2] * tmp[3]
                 fc = tf.reshape(resnet, [tf.shape(resnet)[0], shape_rest])
-                fc = tf.concat([fc, self.action_input], axis=1)
+                fc = tf.concat([fc, self.action_input_target], axis=1)
 
             with tf.variable_scope("fc1"):
-                fc1 = tf.contrib.layers.fully_connected(fc, 1024)
+                fc1 = tf.contrib.layers.fully_connected(fc, 64)
 
-            with tf.variable_scope("fc2"):
-                fc2 = tf.contrib.layers.fully_connected(fc1, 512)
-
-            with tf.variable_scope("fc3"):
-                out = tf.contrib.layers.fully_connected(fc2, 1)
+            with tf.variable_scope("out"):
+                out = tf.contrib.layers.fully_connected(fc1, 1)
 
         return out
 
@@ -240,9 +235,9 @@ class CriticNetwork:
     def update_target(self):
 
         self.sess.run(self.compute_ema)
-        self.critic_target_variables = \
-            [self.critic_target_variables[i].assign \
-             (self.compute_ema.average(self.critic_variables[i]))]
+        for i in xrange(len(self.critic_variables)):
+            tf.assign(self.critic_target_variables[i], \
+                      self.ema_obj.average(self.critic_variables[i]))
 
 
     def get_action_gradient(self, state_batch, action_batch):
@@ -263,9 +258,10 @@ class CriticNetwork:
             summary_actor_grads_0 = tf.Summary(value=[tf.Summary.Value(tag='action_grads_mean[0]',
                                                                        simple_value=np.asscalar(
                                                                            self.action_grads_mean_plot[0]))])
-            summary_actor_grads_1 = tf.Summary(value=[tf.Summary.Value(tag='action_grads_mean[1]',
-                                                                       simple_value=np.asscalar(
-                                                                           self.action_grads_mean_plot[1]))])
+            summary_actor_grads_1 = tf.Summary(value=
+                                               [tf.Summary.Value(tag='action_grads_mean[1]',
+                                                simple_value=np.asscalar(
+                                                self.action_grads_mean_plot[1]))])
             self.summary_writer.add_summary(summary_actor_grads_0, self.train_counter)
             self.summary_writer.add_summary(summary_actor_grads_1, self.train_counter)
 
@@ -279,8 +275,9 @@ class CriticNetwork:
 
     def target_evaluate(self, state_batch, action_batch):
 
-        return self.sess.run(self.Q_output_target, feed_dict={self.map_input_target: state_batch,
-                                                              self.action_input_target: action_batch})
+        return self.sess.run(self.Q_output_target,
+                             feed_dict={self.map_input_target: state_batch,
+                             self.action_input_target: action_batch})
 
 
 # Create variables with a fan-in condition

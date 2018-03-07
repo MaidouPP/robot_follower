@@ -23,19 +23,25 @@ class RosHandler:
 
         self._depth = 4
         self._length = 662   # SICK TIM561 laser scanner dimension
-        self._state = np.zeros((self._length, self._depth), dtype='float32')
+        self._state = np.zeros((1, self._length, self._depth), dtype='float32')
 
         self._reward = 0.0
         self._action = Twist()
+        self._old_action = Twist()
         self._action.linear.x = self._action.linear.y = \
             self._action.linear.z = 0
         self._action.angular.x = self._action.angular.y = \
             self._action.angular.z = 0
-        self._action.linear.x = 1
-        self._action.angular.z = 0.5
+        # self._action.linear.x = 1
+        # self._action.angular.z = 0.5
         self._person_pos = np.zeros((2,))
         self._person_target = np.zeros((2,))
         self._robot_pos = np.zeros((2,))
+
+        cost_map = rospy.get_param('costmap')
+        pickle_file = open(cost_map, 'rb')
+        self._cost_map = pickle.load(pickle_file)
+        rospy.sleep(0.2)
 
         self._sub_laser = rospy.Subscriber(
             "/simulation_walk/laser4", Laser4, self._input_callback_laser)
@@ -56,12 +62,7 @@ class RosHandler:
         self.end_of_episode = False
         # self._end_of_episode.data = True
 
-        cost_map = rospy.get_param('costmap')
-        with open(cost_map, 'rb') as pickle_file:
-            self._cost_map = pickle.load(pickle_file)
-        # self._cost_map = pickle.load(cost_map)
-
-        rospy.init_node("ros_handler", anonymous=True)
+        # rospy.init_node("ros_handler", anonymous=True)
 
         self._new_msg_flag = False
 
@@ -70,8 +71,10 @@ class RosHandler:
     def _input_callback_laser(self, data):
         ranges = np.array(data.ranges)
         # print ranges.shape
-        self._state = ranges.reshape((self._length, self._depth))
-        self._calculate_reward()
+        self._state = ranges.reshape((1, self._length, self._depth))
+        self._state[self._state == np.inf] = 30
+        # self._state = self._state / 10.0
+        self._reward = self._calculate_reward()
         self._new_msg_flag = True
 
     def _input_callback_person_pos(self, data):
@@ -97,6 +100,7 @@ class RosHandler:
         # print "=============== the target is: ", data
         # print "=============== the human isL ", self._person_pos
         self.end_of_episode = False
+        rospy.sleep(0.2)
         self._calculate_start_pos(data, self._person_pos)
 
     def _gazebo_callback_end_traj(self, data):
@@ -107,8 +111,6 @@ class RosHandler:
         calculate the starting point for robot to follow
         the person in the new round
         """
-        print "============> target is: ", target
-        print "------------> actor pos is:, ", actor_pos
         dx = target.x - actor_pos[0]
         dy = target.y - actor_pos[1]
         vec = np.array([dx, dy])
@@ -128,7 +130,6 @@ class RosHandler:
             result[0] = temp[0] + noise * ortho[0]
             result[1] = temp[1] + noise * ortho[1]
 
-            print result
             success = self._valid_pos(result)
 
         msg = ModelState()
@@ -161,8 +162,8 @@ class RosHandler:
         # print self._cost_map[int(pos_[1]), int(pos_[0])]
         vec = self._person_pos - self._robot_pos
         distance = np.linalg.norm(vec)
-        print "=== pos_: ", pos_
-        print "--- pos: ", pos
+        # print "=== pos_: ", pos_
+        # print "--- pos: ", pos
         if distance < 0.3:
             return False
         if self._cost_map[int(pos_[1]), int(pos_[0])] == 0:
@@ -183,20 +184,20 @@ class RosHandler:
             msg.data = True
             self._pub_end.publish(msg)
 
-            return -1000
+            return -1000.0
 
         if np.dot(v1_, v2_) < 0:
-            return 0
+            return 0.0
         else:
             distance = np.linalg.norm(v2)
-            if distance > 1 or distance < 0.35:
-                return 0
+            if distance > 1.5 or distance < 0.35:
+                return 0.0
             else:
                 if (self._calculate_angle(ortho_v1, v2_) < math.pi/4 and \
                    self._calculate_angle(ortho_v1, v2_) > 0) or \
                    (self._calculate_angle(-ortho_v1, v2_) < math.pi/4 and \
                     self._calculate_angle(-ortho_v1, v2_) > 0):
-                       return 1
+                       return 1.0
                 else:
                     return 0.5
 
@@ -223,21 +224,29 @@ class RosHandler:
 
     @property
     def action(self):
-        return self._action
+        tmp = np.array([self._action.linear.x,
+                         self._action.angular.z])
+        tmp = np.reshape(tmp, (1, 2))
+        return tmp
 
     @action.setter
     def action(self, vel):
-        try:
-            linear_x, angular_z = vel
-        except ValueError:
-            raise ValueError("Pass an iterable with two elements")
-        else:
-            self._action.linear_x = linear_x
-            self._action.angular_z = angular_z
+        self._action.linear.x, self._action.angular.z = vel
+
+    @property
+    def old_action(self):
+        tmp = np.array([self._old_action.linear.x,
+                         self._old_action.angular.z])
+        tmp = np.reshape(tmp, (1, 2))
+        return tmp
 
     @property
     def state(self):
         return self._state
+
+    @property
+    def reward(self):
+        return self._reward
 
     def new_msg(self):
         """
@@ -250,12 +259,10 @@ class RosHandler:
 
         return output
 
-    def _publish_action(self):
-        rate = rospy.Rate(0.02)
-        while not rospy.is_shutdown():
-            self._pub_action.publish(self.action)
-            # self._pub_test.publish(self._end_of_episode)
-            rate.sleep()
+    def publish_action(self, new_action):
+        self._old_action = self._action
+        self._action.linear.x, self._action.angular.z = new_action
+        self._pub_action.publish(self._action)
 
 
 if __name__=='__main__':

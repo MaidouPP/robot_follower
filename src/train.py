@@ -30,21 +30,23 @@ def main():
 
     agent = DDPG()
 
-    print "========================== finish ddpg init?"
+    print "========================== finish ddpg init"
     rospy.init_node("robot_follower", anonymous=True)
 
-    ros_handler = ROSHandler()
+    ros_handler = RosHandler()
 
-    print "============================ here??"
+    print "========================== start ros_handler"
     while not rospy.is_shutdown():
         if ros_handler.new_msg():
-            if not ros_handler.is_episode_finished:
-                ros_handler.action = agent.get_action(ros_handler.state)
+            if not ros_handler.end_of_episode:
+                action = agent.get_action(ros_handler.state,
+                                          ros_handler.old_action)
+                ros_handler.publish_action(action)
 
             agent.set_experience(ros_handler.state, ros_handler.reward,
-                                 ros_handler.is_eipsode_finished)
-
-            agent.learn()
+                                 ros_handler.end_of_episode)
+        else:
+            agent.train()
 
 
 if __name__ == '__main__':
