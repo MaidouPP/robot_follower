@@ -43,7 +43,7 @@ class ActionPublisher:
         self._action = data
 
     def _publish_action(self):
-        rate = rospy.Rate(0.02)
+        rate = rospy.Rate(30)
         while not rospy.is_shutdown():
             if self._ready:
                 self._pub_new_act.publish(self._action)

@@ -5,7 +5,7 @@ import numpy as np
 # Parameters:
 NUM_EXPERIENCES = 100	    # How many experiences stored per file
 MIN_FILE_NUM = 10           # How many files at minimum do we need for training
-PRE_STORED_DATA_FILES = 0   # How many files are already stored in our Data folder
+PRE_STORED_DATA_FILES = 15   # How many files are already stored in our Data folder
 
 MIN_FILES_IN_QUEUE = 10     # Files are added when this Number is reached
 NEW_FILES_TO_ADD = 200      # How many files are added to the fifo file queue
@@ -78,23 +78,24 @@ class DataManager:
 
         # decode feature example
         features = tf.parse_single_example(serialized_experience, features={
-            'state': tf.FixedLenFeature([], tf.string),
+            'state': tf.FixedLenFeature([2648], tf.float32),
             'action': tf.FixedLenFeature([2], tf.float32),
             'reward': tf.FixedLenFeature([], tf.float32),
-            'next_state': tf.FixedLenFeature([], tf.string),
+            'next_state': tf.FixedLenFeature([2648], tf.float32),
             'is_episode_finished': tf.FixedLenFeature([], tf.int64)})
 
-        state = tf.decode_raw(features['state'], tf.uint8)
-        state.set_shape([662*4])
+        # state = tf.decode_raw(features['state'], tf.float32)
+        state = features['state']
         action = features['action']
         reward = features['reward']
-        next_state = tf.decode_raw(features['next_state'], tf.uint8)
-        next_state.set_shape([662*4])
+        # next_state = tf.decode_raw(features['next_state'], tf.float32)
+        next_state = features['next_state']
         is_episode_finished = features['is_episode_finished']
 
         # reshape gridmaps
-        state = tf.reshape(state, [662, 4])
-        next_state = tf.reshape(next_state, [662, 4])
+        # print state.shape
+        state = tf.reshape(state, [1, 662, 4])
+        next_state = tf.reshape(next_state, [1, 662, 4])
 
         # batch shuffling is done in a seperate thread
         state_batch, action_batch, reward_batch, next_state_batch, is_episode_finished_batch = tf.train.shuffle_batch(
@@ -143,15 +144,17 @@ class DataManager:
     def store_experience_to_file(self, state, action, reward, next_state, is_episode_finished):
         # write experience to file (s_t, a_t, r_t, s_{t+1})
 
-        state_raw = state.tostring()
-        next_state_raw = next_state.tostring()
+        # state_raw = state.tostring()
+        # next_state_raw = next_state.tostring()
+        state = state.flatten()
+        next_state = next_state.flatten()
 
         # build example
         example = tf.train.Example(features=tf.train.Features(feature={
-            'state': tf.train.Feature(bytes_list=tf.train.BytesList(value=[state_raw])),
+            'state': tf.train.Feature(float_list=tf.train.FloatList(value=state)),
             'action': tf.train.Feature(float_list=tf.train.FloatList(value=action.tolist())),
             'reward': tf.train.Feature(float_list=tf.train.FloatList(value=[reward])),
-            'next_state': tf.train.Feature(bytes_list=tf.train.BytesList(value=[next_state_raw])),
+            'next_state': tf.train.Feature(float_list=tf.train.FloatList(value=next_state)),
             'is_episode_finished': tf.train.Feature(int64_list=tf.train.Int64List(value=[is_episode_finished]))
         }))
 
@@ -172,3 +175,4 @@ class DataManager:
             # create new file
             self.filename = self.experience_path + '/data_' + str(self.file_counter) + '.tfrecords'
             self.writer = tf.python_io.TFRecordWriter(self.filename)
+            print "Write the ", self.file_counter, "th new experience file."
