@@ -21,7 +21,7 @@ class ActionPublisher:
             "/bump", Bool, self._gazebo_callback_bump)
 
         self._pub_new_act = rospy.Publisher(
-            "/cmd_vel", Twist, queue_size=10)
+            "/cmd_vel", Twist, queue_size=100)
 
         self._ready = False
         rospy.init_node('action_publisher', anonymous=True)

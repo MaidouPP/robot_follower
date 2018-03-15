@@ -38,13 +38,13 @@ def main():
     print "========================== start ros_handler"
     while not rospy.is_shutdown():
         if ros_handler.new_msg():
-            if not ros_handler.end_of_episode:
-                action = agent.get_action(ros_handler.state,
-                                          ros_handler.old_action)
-                ros_handler.publish_action(action)
-
-            agent.set_experience(ros_handler.state, ros_handler.reward,
-                                 ros_handler.end_of_episode)
+            # if not ros_handler.end_of_episode:
+            #     action = agent.get_action(ros_handler.state,
+            #                               ros_handler.old_action)
+            #     ros_handler.publish_action(action)
+            pass
+            # agent.set_experience(ros_handler.state, ros_handler.reward,
+            #                      ros_handler.end_of_episode)
         else:
             agent.train()
 
