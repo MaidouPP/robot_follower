@@ -2,8 +2,6 @@ import tensorflow as tf
 import numpy as np
 import utils
 import time
-from critic import create_variable
-from critic import create_variable_final
 
 # How fast is learning
 LEARNING_RATE = 0.0005
@@ -121,8 +119,11 @@ class ActorNetwork:
             with tf.variable_scope("fc1"):
                 fc1 = tf.contrib.layers.fully_connected(fc, 128)
 
+            with tf.variable_scope("fc2"):
+                fc2 = tf.contrib.layers.fully_connected(fc1, 64)
+
             with tf.variable_scope("out"):
-                out = tf.contrib.layers.fully_connected(fc1, 2)
+                out = tf.contrib.layers.fully_connected(fc2, 2)
 
             return out
 
@@ -156,8 +157,11 @@ class ActorNetwork:
             with tf.variable_scope("fc1"):
                 fc1 = tf.contrib.layers.fully_connected(fc, 128)
 
+            with tf.variable_scope("fc2"):
+                fc2 = tf.contrib.layers.fully_connected(fc1, 64)
+
             with tf.variable_scope("out"):
-                out = tf.contrib.layers.fully_connected(fc1, 2)
+                out = tf.contrib.layers.fully_connected(fc2, 2)
 
             return out
 
@@ -195,8 +199,8 @@ class ActorNetwork:
         self.sess.run(self.optimizer, feed_dict={
             self.q_gradient_input: q_gradient_batch,
             self.map_input: state_batch,
-            self.action_input: action_batch})
-            # self.is_training: True})
+            self.action_input: action_batch,
+            self.is_training: True})
 
         # Update the target
         self.update_target()
@@ -216,16 +220,16 @@ class ActorNetwork:
         state = np.expand_dims(state, axis=0)
         return self.sess.run(self.action_output, feed_dict={
             self.map_input: state,
-            self.action_input: old_action})
-            # self.is_training: False})
+            self.action_input: old_action,
+            self.is_training: False})
 
     def evaluate(self, state_batch, action_batch):
 
         # Get an action batch
         actions = self.sess.run(self.action_output,
                                 feed_dict={self.map_input: state_batch,
-                                           self.action_input: action_batch})
-                                           # self.is_training: False})
+                                           self.action_input: action_batch,
+                                           self.is_training: False})
 
         # Create summaries for the actions
         actions_mean = np.mean(np.asarray(actions, dtype=float), axis=0)
@@ -254,8 +258,8 @@ class ActorNetwork:
         # Get action batch
         actions = self.sess.run(self.action_output_target,
                                 feed_dict={self.map_input_target: state_batch,
-                                           self.action_input_target: action_batch})
-                                           # self.is_training: False})
+                                           self.action_input_target: action_batch,
+                                           self.is_training: False})
 
         # Create summaries for the target actions
         actions_mean = np.mean(np.asarray(actions, dtype=float), axis=0)

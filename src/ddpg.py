@@ -14,7 +14,6 @@ import time
 # Visualization
 # from state_visualizer import CostmapVisualizer
 
-
 # How big are our mini batches
 BATCH_SIZE = 32
 
@@ -27,14 +26,15 @@ THETA = 0.15
 SIGMA = 0.20
 
 # Action boundaries
-A0_BOUNDS = [-0.4, 0.4]
-A1_BOUNDS = [-0.4, 0.4]
+A0_BOUNDS = [-0.8, 0.8]
+A1_BOUNDS = [-1.5, 1.5]
 
 # Should we load a saved net
 PRE_TRAINED_NETS = False
 
 # If we use a pretrained net
-NET_LOAD_PATH = os.path.join(os.path.dirname(__file__), os.pardir)+"/pre_trained_networks/pre_trained_networks"
+NET_LOAD_PATH = os.path.join(os.path.dirname(
+    __file__), os.pardir) + "/pre_trained_networks/pre_trained_networks"
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -60,12 +60,13 @@ VISUALIZE_BUFFER = False
 SAVE_STEP = 1000
 
 # Max training step with noise
-MAX_NOISE_STEP = 3000000
+MAX_NOISE_STEP = 300000
 
 
 class DDPG:
 
-    def __init__(self):
+    def __init__(self,
+                 pretrain=False):
 
         # Make sure all the directories exist
         if not tf.gfile.Exists(TFLOG_PATH):
@@ -85,9 +86,9 @@ class DDPG:
         with self.graph.as_default():
 
             # View the state batches
-            self.visualize_input = VISUALIZE_BUFFER
-            if self.visualize_input:
-                self.viewer = CostmapVisualizer()
+            # self.visualize_input = VISUALIZE_BUFFER
+            # if self.visualize_input:
+            #     self.viewer = CostmapVisualizer()
 
             # Hardcode input size and action size
             self.height = 662
@@ -96,7 +97,8 @@ class DDPG:
             self.action_dim = 2
 
             # Initialize the current action and the old action and old state for setting experiences
-            self.old_state = np.zeros((self.width, self.height, self.depth), dtype='float32')
+            self.old_state = np.zeros(
+                (self.width, self.height, self.depth), dtype='float32')
             self.old_action = np.ones(2, dtype='float32')
             self.network_action = np.zeros(2, dtype='float32')
             self.noise_action = np.zeros(2, dtype='float32')
@@ -114,16 +116,23 @@ class DDPG:
             self.summary_writer = tf.summary.FileWriter(TFLOG_PATH)
 
             # Initialize actor and critic networks
-            self.actor_network = ActorNetwork(self.height, self.action_dim, self.depth, self.session,
+            self.actor_network = ActorNetwork(self.height,
+                                              self.action_dim,
+                                              self.depth,
+                                              self.session,
                                               self.summary_writer)
-            self.critic_network = CriticNetwork(self.height, self.action_dim, self.depth, self.session,
+            self.critic_network = CriticNetwork(self.height,
+                                                self.action_dim,
+                                                self.depth,
+                                                self.session,
                                                 self.summary_writer)
 
             # Initialize the saver to save the network params
             self.saver = tf.train.Saver()
 
             # initialize the experience data manger
-            self.data_manager = DataManager(BATCH_SIZE, EXPERIENCE_PATH, self.session)
+            self.data_manager = DataManager(
+                BATCH_SIZE, EXPERIENCE_PATH, self.session)
 
             # Uncomment if collecting a buffer for the autoencoder
             # self.buffer = deque()
@@ -157,7 +166,7 @@ class DDPG:
         # Check if the buffer is big enough to start training
         if self.data_manager.enough_data():
 
-            start_ = time.time()
+            # start_ = time.time()
 
             # get the next random batch from the data manger
             state_batch, \
@@ -166,8 +175,8 @@ class DDPG:
                 next_state_batch, \
                 is_episode_finished_batch = self.data_manager.get_next_batch()
 
-            state_batch = np.divide(state_batch, 100.0)
-            next_state_batch = np.divide(next_state_batch, 100.0)
+            state_batch = np.divide(state_batch, 10.0)
+            next_state_batch = np.divide(next_state_batch, 10.0)
 
             # Are we visualizing the first state batch for debugging?
             # If so: We have to scale up the values for grey scale before plotting
@@ -183,12 +192,13 @@ class DDPG:
 
             # start = time.time()
             y_batch = []
-            next_action_batch = self.actor_network.target_evaluate(next_state_batch, action_batch)
-            q_value_batch = self.critic_network.target_evaluate(next_state_batch, next_action_batch)
+            next_action_batch = self.actor_network.target_evaluate(
+                next_state_batch, action_batch)
+            q_value_batch = self.critic_network.target_evaluate(
+                next_state_batch, next_action_batch)
             # done = time.time()
             # elapsed = done - start
             # print "forward actor and critic time is: ", elapsed
-
 
             for i in range(0, BATCH_SIZE):
                 if is_episode_finished_batch[i]:
@@ -197,7 +207,7 @@ class DDPG:
                     y_batch.append(reward_batch[i] + GAMMA * q_value_batch[i])
 
             # Now that we have the y batch lets train the critic
-       	    # start = time.time()
+            # start = time.time()
             self.critic_network.train(y_batch, state_batch, action_batch)
             # done = time.time()
             # elapsed = done - start
@@ -207,58 +217,70 @@ class DDPG:
 
             # Get the action batch so we can calculate the action gradient with it
             # Then get the action gradient batch and adapt the gradient with the gradient inverting method
-       	    # start = time.time()
-            action_batch_for_gradients = self.actor_network.evaluate(state_batch, action_batch)
+            # start = time.time()
+            action_batch_for_gradients = self.actor_network.evaluate(
+                state_batch, action_batch)
             # done = time.time()
             # elapsed = done - start
             # print "forward action after critic training time is: ", elapsed
 
-            q_gradient_batch = self.critic_network.get_action_gradient(state_batch, action_batch_for_gradients)
-            q_gradient_batch = self.grad_inv.invert(q_gradient_batch, action_batch_for_gradients)
+            q_gradient_batch = self.critic_network.get_action_gradient(
+                state_batch, action_batch_for_gradients)
+            q_gradient_batch = self.grad_inv.invert(
+                q_gradient_batch, action_batch_for_gradients)
 
             # Now we can train the actor
             # start = time.time()
-            self.actor_network.train(q_gradient_batch, state_batch, action_batch)
+            self.actor_network.train(
+                q_gradient_batch, state_batch, action_batch)
             # done = time.time()
             # elapsed = done - start
             # print "train actor time is: ", elapsed
 
-            done = time.time()
-            elapsed = done - start_
-            print "====== total time is: ", elapsed
+            # done = time.time()
+            # elapsed = done - start_
+            # print "====== total time is: ", elapsed
 
             # Save model if necessary
             if self.training_step > 0 and self.training_step % SAVE_STEP == 0:
-                self.saver.save(self.session, NET_SAVE_PATH, global_step=self.training_step)
+                self.saver.save(self.session, NET_SAVE_PATH,
+                                global_step=self.training_step)
 
             # Update time step
             self.training_step += 1
 
-        start_ = time.time()
+        if self.training_step % 400 == 0:
+            print "iter: ", self.training_step
+
+        # start_ = time.time()
         self.data_manager.check_for_enqueue()
-        done = time.time()
-        elapsed = done - start_
-        print "############ check enqueue time is: ", elapsed
+        # done = time.time()
+        # elapsed = done - start_
+        # print "############ check enqueue time is: ", elapsed
 
     def get_action(self, state, old_action):
 
         # normalize the state
         state = state.astype(float)
-        state = np.divide(state, 100.0)
+        state = np.divide(state, 10.0)
 
         # Get the action
         self.action = self.actor_network.get_action(state, old_action)
+        print self.action.get_shape()
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        exit()
 
         # Are we using noise?
         if self.noise_flag:
             # scale noise down to 0 at training step 3000000
             if self.training_step < MAX_NOISE_STEP:
-                self.action += (MAX_NOISE_STEP - self.training_step) / MAX_NOISE_STEP * self.exploration_noise.noise()
+                self.action += (MAX_NOISE_STEP - self.training_step) / \
+                    MAX_NOISE_STEP * self.exploration_noise.noise()
             # if action value lies outside of action bounds, rescale the action vector
             if self.action[0] < A0_BOUNDS[0] or self.action[0] > A0_BOUNDS[1]:
-                self.action *= np.fabs(A0_BOUNDS[0]/self.action[0])
+                self.action *= np.fabs(A0_BOUNDS[0] / self.action[0])
             if self.action[1] < A0_BOUNDS[0] or self.action[1] > A0_BOUNDS[1]:
-                self.action *= np.fabs(A1_BOUNDS[0]/self.action[1])
+                self.action *= np.fabs(A1_BOUNDS[0] / self.action[1])
 
         # Life q value output for this action and state
         self.print_q_value(state, self.action)
@@ -271,6 +293,9 @@ class DDPG:
         if self.first_experience:
             self.first_experience = False
         else:
+            state.astype('float32')
+            self.old_action.astype('float32')
+            self.old_action.astype('float32')
             self.data_manager.store_experience_to_file(self.old_state, self.old_action, reward, state,
                                                        is_episode_finished)
 
@@ -295,5 +320,5 @@ class DDPG:
             stroke_pos = 0
         elif stroke_pos > 60:
             stroke_pos = 60
-        print '[' + stroke_pos * string + '|' + (60-stroke_pos) * string + ']', "Q: ", q_value[0][0], \
+        print '[' + stroke_pos * string + '|' + (60 - stroke_pos) * string + ']', "Q: ", q_value[0][0], \
             "\tt: ", self.training_step
