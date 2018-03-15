@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import utils
+import time
 from critic import create_variable
 from critic import create_variable_final
 
@@ -64,8 +65,21 @@ class ActorNetwork:
             with tf.variable_scope("actor_target") as scope:
                 self.actor_target_variables = tf.get_collection(tf.GraphKeys.VARIABLES, scope=scope.name)
 
+            self.actor_target_ema = [tf.assign(self.actor_target_variables[i], \
+                                     self.ema_obj.average(self.actor_variables[i]))
+                                     for i in xrange(len(self.actor_variables))]
+
+
             # Define the gradient operation that delivers the gradients with the action gradient from the critic
             self.q_gradient_input = tf.placeholder(tf.float32, [None, action_size])
+
+            # tf.gradients(
+            #     ys,
+            #     xs,
+            #     grad_ys=None ...)
+            # this method computes the gradients of ys w.r.t. xs, and initialized with
+            # grad_ys. If grad_ys is none, it's initialized as 1's.
+            # Here the gradient is multiplied with q_gradient_input
             self.parameters_gradients = tf.gradients(self.action_output, self.actor_variables, -self.q_gradient_input)
 
             # Define the optimizer
@@ -91,7 +105,7 @@ class ActorNetwork:
 
             with tf.variable_scope("resnet"):
                 resnet = utils.resnet_block(conv1, [1, 3,
-                               conv1.get_shape().as_list()[-1], 64], self.is_training)
+                               conv1.get_shape().as_list()[-1], 64]) #, self.is_training)
                 resnet = tf.nn.avg_pool(resnet,
                                         ksize=[1, 1, 3, 1],
                                         strides=[1, 1, 3, 1],
@@ -126,7 +140,7 @@ class ActorNetwork:
 
             with tf.variable_scope("resnet"):
                 resnet = utils.resnet_block(conv1, [1, 3,
-                               conv1.get_shape().as_list()[-1], 64], self.is_training)
+                               conv1.get_shape().as_list()[-1], 64]) #, self.is_training)
                 resnet = tf.nn.avg_pool(resnet,
                                         ksize=[1, 1, 3, 1],
                                         strides=[1, 1, 3, 1],
@@ -181,8 +195,8 @@ class ActorNetwork:
         self.sess.run(self.optimizer, feed_dict={
             self.q_gradient_input: q_gradient_batch,
             self.map_input: state_batch,
-            self.action_input: action_batch,
-            self.is_training: True})
+            self.action_input: action_batch})
+            # self.is_training: True})
 
         # Update the target
         self.update_target()
@@ -193,24 +207,25 @@ class ActorNetwork:
 
         self.sess.run(self.compute_ema)
         for i in xrange(len(self.actor_variables)):
-            tf.assign(self.actor_target_variables[i], \
-                      self.ema_obj.average(self.actor_variables[i]))
+            self.sess.run(self.actor_target_ema[i])
+            # tf.assign(self.actor_target_variables[i], \
+            #           self.ema_obj.average(self.actor_variables[i]))
 
     def get_action(self, state, old_action):
 
         state = np.expand_dims(state, axis=0)
         return self.sess.run(self.action_output, feed_dict={
             self.map_input: state,
-            self.action_input: old_action,
-            self.is_training: False})
+            self.action_input: old_action})
+            # self.is_training: False})
 
     def evaluate(self, state_batch, action_batch):
 
         # Get an action batch
         actions = self.sess.run(self.action_output,
                                 feed_dict={self.map_input: state_batch,
-                                           self.action_input: action_batch,
-                                           self.is_training: False})
+                                           self.action_input: action_batch})
+                                           # self.is_training: False})
 
         # Create summaries for the actions
         actions_mean = np.mean(np.asarray(actions, dtype=float), axis=0)
@@ -239,8 +254,8 @@ class ActorNetwork:
         # Get action batch
         actions = self.sess.run(self.action_output_target,
                                 feed_dict={self.map_input_target: state_batch,
-                                           self.action_input_target: action_batch,
-                                           self.is_training: False})
+                                           self.action_input_target: action_batch})
+                                           # self.is_training: False})
 
         # Create summaries for the target actions
         actions_mean = np.mean(np.asarray(actions, dtype=float), axis=0)

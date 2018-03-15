@@ -80,9 +80,9 @@ class DataManager:
         features = tf.parse_single_example(serialized_experience, features={
             'state': tf.FixedLenFeature([2648], tf.float32),
             'action': tf.FixedLenFeature([2], tf.float32),
-            'reward': tf.FixedLenFeature([], tf.float32),
+            'reward': tf.FixedLenFeature([1], tf.float32),
             'next_state': tf.FixedLenFeature([2648], tf.float32),
-            'is_episode_finished': tf.FixedLenFeature([], tf.int64)})
+            'is_episode_finished': tf.FixedLenFeature([1], tf.int64)})
 
         # state = tf.decode_raw(features['state'], tf.float32)
         state = features['state']
