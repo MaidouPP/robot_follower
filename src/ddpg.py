@@ -249,8 +249,8 @@ class DDPG:
             # Update time step
             self.training_step += 1
 
-        if self.training_step % 400 == 0:
-            print "iter: ", self.training_step
+            if self.training_step % 400 == 0:
+                print "iter: ", self.training_step
 
         # start_ = time.time()
         self.data_manager.check_for_enqueue()
@@ -266,9 +266,7 @@ class DDPG:
 
         # Get the action
         self.action = self.actor_network.get_action(state, old_action)
-        print self.action.get_shape()
-        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        exit()
+        self.action = self.action.reshape((2,))
 
         # Are we using noise?
         if self.noise_flag:
@@ -320,5 +318,5 @@ class DDPG:
             stroke_pos = 0
         elif stroke_pos > 60:
             stroke_pos = 60
-        print '[' + stroke_pos * string + '|' + (60 - stroke_pos) * string + ']', "Q: ", q_value[0][0], \
-            "\tt: ", self.training_step
+        # print '[' + stroke_pos * string + '|' + (60 - stroke_pos) * string + ']', "Q: ", q_value[0][0], \
+        #     "\tt: ", self.training_step
