@@ -4,7 +4,7 @@ import utils
 import time
 
 # How fast is learning
-LEARNING_RATE = 0.0005
+LEARNING_RATE = 0.0001
 
 # How fast does the target net track
 TARGET_DECAY = 0.9999
@@ -96,6 +96,7 @@ class ActorNetwork:
 
             with tf.variable_scope("conv1"):
                 conv1 = utils.conv(self.map_input, [1, 7, self.depth, 64], [1, 3])
+                conv1 = tf.nn.relu(conv1)
                 conv1 = tf.nn.max_pool(conv1,
                                        ksize=[1, 1, 3, 1],
                                        strides=[1, 1, 3, 1],
@@ -114,19 +115,21 @@ class ActorNetwork:
                 # !!! very dirty method... shixin
                 shape_rest = tmp[1] * tmp[2] * tmp[3]
                 fc = tf.reshape(resnet, [tf.shape(resnet)[0], shape_rest])
+                fc = tf.nn.relu(fc)
                 fc = tf.concat([fc, self.action_input], axis=1)
 
             with tf.variable_scope("fc1"):
                 fc1 = tf.contrib.layers.fully_connected(fc, 128)
+                fc1 = tf.nn.relu(fc1)
 
             with tf.variable_scope("fc2"):
                 fc2 = tf.contrib.layers.fully_connected(fc1, 64)
+                fc2 = tf.nn.relu(fc2)
 
             with tf.variable_scope("out"):
                 out = tf.contrib.layers.fully_connected(fc2, 2)
 
             return out
-
 
     def create_target_network(self):
 
@@ -134,6 +137,7 @@ class ActorNetwork:
 
             with tf.variable_scope("conv1"):
                 conv1 = utils.conv(self.map_input_target, [1, 7, self.depth, 64], [1, 3])
+                conv1 = tf.nn.relu(conv1)
                 conv1 = tf.nn.max_pool(conv1,
                                        ksize=[1, 1, 3, 1],
                                        strides=[1, 1, 3, 1],
@@ -152,13 +156,16 @@ class ActorNetwork:
                 # !!! very dirty method... shixin
                 shape_rest = tmp[1] * tmp[2] * tmp[3]
                 fc = tf.reshape(resnet, [tf.shape(resnet)[0], shape_rest])
+                fc = tf.nn.relu(fc)
                 fc = tf.concat([fc, self.action_input_target], axis=1)
 
             with tf.variable_scope("fc1"):
                 fc1 = tf.contrib.layers.fully_connected(fc, 128)
+                fc1 = tf.nn.relu(fc1)
 
             with tf.variable_scope("fc2"):
                 fc2 = tf.contrib.layers.fully_connected(fc1, 64)
+                fc2 = tf.nn.relu(fc2)
 
             with tf.variable_scope("out"):
                 out = tf.contrib.layers.fully_connected(fc2, 2)

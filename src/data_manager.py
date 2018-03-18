@@ -5,7 +5,7 @@ import numpy as np
 # Parameters:
 NUM_EXPERIENCES = 100	    # How many experiences stored per file
 MIN_FILE_NUM = 10           # How many files at minimum do we need for training
-PRE_STORED_DATA_FILES = 15   # How many files are already stored in our Data folder
+PRE_STORED_DATA_FILES = 0   # How many files are already stored in our Data folder
 
 MIN_FILES_IN_QUEUE = 10     # Files are added when this Number is reached
 NEW_FILES_TO_ADD = 200      # How many files are added to the fifo file queue
@@ -129,7 +129,10 @@ class DataManager:
 
     # checks if new files need to be enqueued to the fifo file queue
     def check_for_enqueue(self):
-        if self.sess.run(self.filename_queue_size) < MIN_FILES_IN_QUEUE and self.file_counter >= 1:
+
+        file_num = self.sess.run(self.filename_queue_size)
+        # print "file num is : ", file_num, " and ", self.experience_path
+        if file_num < MIN_FILES_IN_QUEUE and self.file_counter >= 1:
             print "enqueuing files"
             if self.file_counter > 0:
                 random_array = np.random.randint(0, high=self.file_counter, size=NEW_FILES_TO_ADD)
@@ -139,6 +142,11 @@ class DataManager:
             for i in range(NEW_FILES_TO_ADD):
                 filename = self.experience_path + '/data_' + str(random_array[i]) + '.tfrecords'
                 self.sess.run(self.enqueue_op, feed_dict={self.filename_placeholder: filename})
+                file_num = self.sess.run(self.filename_queue_size)
+                # print "--- file num: ", file_num
+
+        # else:
+        #     print "not enqueuing files"
 
     # stores experiences sequentially to files
     def store_experience_to_file(self, state, action, reward, next_state, is_episode_finished):

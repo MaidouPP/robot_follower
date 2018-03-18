@@ -24,7 +24,7 @@ FILTER3 = 32
 # FILTER4 = 64
 
 # How fast is learning
-LEARNING_RATE = 0.0005
+LEARNING_RATE = 0.0001
 
 # How much do we regularize the weights of the net
 REGULARIZATION_DECAY = 0.0
@@ -68,9 +68,9 @@ class CriticNetwork:
 
             # Create critic network
             self.map_input = tf.placeholder(
-                "float", [None, 1, image_size, image_no])
+                "float32", [None, 1, image_size, image_no])
             self.action_input = tf.placeholder(
-                "float", [None, action_size], name="action_input")
+                "float32", [None, action_size], name="action_input")
             self.Q_output = self.create_network()
 
             # Get all the variables in the critic network for exponential moving average, create ema op
@@ -83,9 +83,9 @@ class CriticNetwork:
 
             # Create target actor network
             self.map_input_target = tf.placeholder(
-                "float", [None, 1, image_size, image_no])
+                "float32", [None, 1, image_size, image_no])
             self.action_input_target = tf.placeholder(
-                "float", [None, action_size])
+                "float32", [None, action_size])
             self.Q_output_target = self.create_target_network()
 
             with tf.variable_scope("critic_target") as scope:
@@ -98,7 +98,7 @@ class CriticNetwork:
                 self.regularization += tf.nn.l2_loss(variable)
 
             # Define the loss with regularization term
-            self.y_input = tf.placeholder("float", [None, 1], name="y_input")
+            self.y_input = tf.placeholder("float32", [None, 1], name="y_input")
             self.td_error = tf.reduce_mean(
                 tf.pow(self.Q_output - self.y_input, 2))
             self.loss = self.td_error + REGULARIZATION_DECAY * self.regularization
@@ -129,6 +129,7 @@ class CriticNetwork:
             with tf.variable_scope("conv1"):
                 conv1 = utils.conv(self.map_input,
                                    [1, 7, self.image_no, 64], [1, 3])
+                conv1 = tf.nn.relu(conv1)
                 conv1 = tf.nn.max_pool(conv1,
                                        ksize=[1, 1, 3, 1],
                                        strides=[1, 1, 3, 1],
@@ -146,10 +147,12 @@ class CriticNetwork:
                 tmp = resnet.get_shape().as_list()
                 shape_rest = tmp[1] * tmp[2] * tmp[3]
                 fc = tf.reshape(resnet, [tf.shape(resnet)[0], shape_rest])
+                fc = tf.nn.relu(fc)
                 fc = tf.concat([fc, self.action_input], axis=1)
 
             with tf.variable_scope("fc1"):
                 fc1 = tf.contrib.layers.fully_connected(fc, 64)
+                fc1 = tf.nn.relu(fc1)
 
             with tf.variable_scope("out"):
                 out = tf.contrib.layers.fully_connected(fc1, 1)
@@ -163,6 +166,7 @@ class CriticNetwork:
             with tf.variable_scope("conv1"):
                 conv1 = utils.conv(self.map_input_target,
                                    [1, 7, self.image_no, 64], [1, 3])
+                conv1 = tf.nn.relu(conv1)
                 conv1 = tf.nn.max_pool(conv1,
                                        ksize=[1, 1, 3, 1],
                                        strides=[1, 1, 3, 1],
@@ -180,10 +184,12 @@ class CriticNetwork:
                 tmp = resnet.get_shape().as_list()
                 shape_rest = tmp[1] * tmp[2] * tmp[3]
                 fc = tf.reshape(resnet, [tf.shape(resnet)[0], shape_rest])
+                fc = tf.nn.relu(fc)
                 fc = tf.concat([fc, self.action_input_target], axis=1)
 
             with tf.variable_scope("fc1"):
                 fc1 = tf.contrib.layers.fully_connected(fc, 64)
+                fc1 = tf.nn.relu(fc1)
 
             with tf.variable_scope("out"):
                 out = tf.contrib.layers.fully_connected(fc1, 1)
@@ -252,6 +258,7 @@ class CriticNetwork:
         self.sess.run(self.compute_ema)
         for i in xrange(len(self.critic_variables)):
             self.sess.run(self.critic_target_ema[i])
+
         # self.sess.run(self.compute_ema)
 
     def get_action_gradient(self, state_batch, action_batch):
@@ -260,7 +267,19 @@ class CriticNetwork:
         action_gradients = self.sess.run(self.action_gradients,
                                          feed_dict={self.map_input: state_batch,
                                                     self.action_input: action_batch,
-                                                    self.is_training: True})[0]
+                                                    self.is_training: False})[0]
+
+        # print action_gradients
+        # q_target = self.sess.run(self.Q_output_target,
+        #                          feed_dict={self.map_input_target: state_batch,
+        #                                                    self.action_input_target: action_batch,
+        #                                                    self.is_training: False})
+        # q = self.sess.run(self.Q_output, feed_dict={self.map_input: state_batch,
+        #                                            self.action_input: action_batch,
+        #                                            self.is_training: False})
+
+        # print q, " ..."
+        # print q_target, "... target"
 
         # Create summaries for the action gradients and add them to the summary writer
         action_grads_mean = np.mean(action_gradients, axis=0)
@@ -289,8 +308,8 @@ class CriticNetwork:
     def evaluate(self, state_batch, action_batch):
 
         return self.sess.run(self.Q_output, feed_dict={self.map_input: state_batch,
-                                                       self.action_input: action_batch,
-                                                       self.is_training: False})
+                                                           self.action_input: action_batch,
+                                                           self.is_training: False})
 
     def target_evaluate(self, state_batch, action_batch):
 

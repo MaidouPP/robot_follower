@@ -184,22 +184,24 @@ class RosHandler:
             msg.data = True
             self._pub_end.publish(msg)
 
-            return -1000.0
+            return -100.0
 
         if np.dot(v1_, v2_) < 0:
             return 0.0
         else:
             distance = np.linalg.norm(v2)
-            if distance > 1.5 or distance < 0.35:
+            if distance > 2.5 or distance < 0.35:
                 return 0.0
+            elif distance > 1.5:
+                return 1.0 - (distance - 1.5)
             else:
                 if (self._calculate_angle(ortho_v1, v2_) < math.pi/4 and \
                    self._calculate_angle(ortho_v1, v2_) > 0) or \
                    (self._calculate_angle(-ortho_v1, v2_) < math.pi/4 and \
                     self._calculate_angle(-ortho_v1, v2_) > 0):
-                       return 1.0
+                       return 2.0
                 else:
-                    return 0.5
+                    return 1.0
 
     @staticmethod
     def _calculate_angle(vec1, vec2):
