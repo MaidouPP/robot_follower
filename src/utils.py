@@ -33,8 +33,9 @@ def conv(x,
     weights = _get_variable('weights',
                             shape=shape,
                             initializer=initializer)
-    bias = tf.get_variable('bias', [filters_out], 'float',
-                           tf.constant_initializer(0.05, dtype='float'))
+    bias = _get_variable('bias', [filters_out], initializer)
+    # bias = tf.get_variable('bias', [filters_out], 'float',
+    #                        tf.constant_initializer(0.05, dtype='float'))
     x = tf.nn.conv2d(x, weights, [1, stride[0], stride[1], 1],
                      padding='SAME')
     return tf.nn.bias_add(x, bias)
