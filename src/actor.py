@@ -4,10 +4,10 @@ import utils
 import time
 
 # How fast is learning
-LEARNING_RATE = 0.0001
+LEARNING_RATE = 0.000001
 
 # How fast does the target net track
-TARGET_DECAY = 0.9999
+TARGET_DECAY = 0.999
 
 # How often do we plot variables during training
 PLOT_STEP = 10
@@ -78,11 +78,15 @@ class ActorNetwork:
             # this method computes the gradients of ys w.r.t. xs, and initialized with
             # grad_ys. If grad_ys is none, it's initialized as 1's.
             # Here the gradient is multiplied with q_gradient_input
-            self.parameters_gradients = tf.gradients(self.action_output, self.actor_variables, -self.q_gradient_input)
+            self.parameters_gradients = tf.gradients(self.action_output,
+                                                     self.actor_variables,
+                                                     -self.q_gradient_input)
 
             # Define the optimizer
-            self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE).apply_gradients(zip(self.parameters_gradients,
-                                                                                       self.actor_variables))
+            self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE,
+                                                    epsilon=0.01).apply_gradients(
+                                                        zip(self.parameters_gradients,
+                                                            self.actor_variables))
 
             # Variables for plotting
             self.actions_mean_plot = [0, 0]
@@ -95,7 +99,7 @@ class ActorNetwork:
         with tf.variable_scope('actor'):
 
             with tf.variable_scope("conv1"):
-                conv1 = utils.conv(self.map_input, [1, 7, self.depth, 64], [1, 3])
+                conv1 = utils.conv(self.map_input, [1, 5, self.depth, 64], [1, 3])
                 conv1 = tf.nn.relu(conv1)
                 conv1 = tf.nn.max_pool(conv1,
                                        ksize=[1, 1, 3, 1],
@@ -104,7 +108,7 @@ class ActorNetwork:
 
             with tf.variable_scope("resnet"):
                 resnet = utils.resnet_block(conv1, [1, 3,
-                               conv1.get_shape().as_list()[-1], 64]) #, self.is_training)
+                               conv1.get_shape().as_list()[-1], 64], self.is_training)
                 resnet = tf.nn.avg_pool(resnet,
                                         ksize=[1, 1, 3, 1],
                                         strides=[1, 1, 3, 1],
@@ -115,19 +119,22 @@ class ActorNetwork:
                 # !!! very dirty method... shixin
                 shape_rest = tmp[1] * tmp[2] * tmp[3]
                 fc = tf.reshape(resnet, [tf.shape(resnet)[0], shape_rest])
-                fc = tf.nn.relu(fc)
-                fc = tf.concat([fc, self.action_input], axis=1)
+                fc = tf.concat([fc, tf.divide(self.action_input, 10)], axis=1)
 
             with tf.variable_scope("fc1"):
-                fc1 = tf.contrib.layers.fully_connected(fc, 128)
-                fc1 = tf.nn.relu(fc1)
+                fc1 = tf.contrib.layers.fully_connected(fc, 128,
+                                                        activation_fn=tf.nn.relu,
+                                                        biases_initializer=tf.contrib.layers.xavier_initializer())
 
             with tf.variable_scope("fc2"):
-                fc2 = tf.contrib.layers.fully_connected(fc1, 64)
-                fc2 = tf.nn.relu(fc2)
+                fc2 = tf.contrib.layers.fully_connected(fc1, 64,
+                                                        activation_fn=tf.nn.relu,
+                                                        biases_initializer=tf.contrib.layers.xavier_initializer())
 
             with tf.variable_scope("out"):
-                out = tf.contrib.layers.fully_connected(fc2, 2)
+                out = tf.contrib.layers.fully_connected(fc2, 2,
+                                                        activation_fn=None,
+                                                        biases_initializer=tf.contrib.layers.xavier_initializer())
 
             return out
 
@@ -136,7 +143,7 @@ class ActorNetwork:
         with tf.variable_scope('actor_target'):
 
             with tf.variable_scope("conv1"):
-                conv1 = utils.conv(self.map_input_target, [1, 7, self.depth, 64], [1, 3])
+                conv1 = utils.conv(self.map_input_target, [1, 5, self.depth, 64], [1, 3])
                 conv1 = tf.nn.relu(conv1)
                 conv1 = tf.nn.max_pool(conv1,
                                        ksize=[1, 1, 3, 1],
@@ -145,7 +152,7 @@ class ActorNetwork:
 
             with tf.variable_scope("resnet"):
                 resnet = utils.resnet_block(conv1, [1, 3,
-                               conv1.get_shape().as_list()[-1], 64]) #, self.is_training)
+                               conv1.get_shape().as_list()[-1], 64], self.is_training)
                 resnet = tf.nn.avg_pool(resnet,
                                         ksize=[1, 1, 3, 1],
                                         strides=[1, 1, 3, 1],
@@ -156,19 +163,22 @@ class ActorNetwork:
                 # !!! very dirty method... shixin
                 shape_rest = tmp[1] * tmp[2] * tmp[3]
                 fc = tf.reshape(resnet, [tf.shape(resnet)[0], shape_rest])
-                fc = tf.nn.relu(fc)
-                fc = tf.concat([fc, self.action_input_target], axis=1)
+                fc = tf.concat([fc, tf.divide(self.action_input, 10)], axis=1)
 
             with tf.variable_scope("fc1"):
-                fc1 = tf.contrib.layers.fully_connected(fc, 128)
-                fc1 = tf.nn.relu(fc1)
+                fc1 = tf.contrib.layers.fully_connected(fc, 128,
+                                                        activation_fn=tf.nn.relu,
+                                                        biases_initializer=tf.contrib.layers.xavier_initializer())
 
             with tf.variable_scope("fc2"):
-                fc2 = tf.contrib.layers.fully_connected(fc1, 64)
-                fc2 = tf.nn.relu(fc2)
+                fc2 = tf.contrib.layers.fully_connected(fc1, 64,
+                                                        activation_fn=tf.nn.relu,
+                                                        biases_initializer=tf.contrib.layers.xavier_initializer())
 
             with tf.variable_scope("out"):
-                out = tf.contrib.layers.fully_connected(fc2, 2)
+                out = tf.contrib.layers.fully_connected(fc2, 2,
+                                                        activation_fn=None,
+                                                        biases_initializer=tf.contrib.layers.xavier_initializer())
 
             return out
 

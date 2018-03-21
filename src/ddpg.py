@@ -22,19 +22,19 @@ GAMMA = 0.99
 
 # How does our noise behave (MU = Center value, THETA = How strong is noise pulled to MU, SIGMA = Variance of noise)
 MU = 0.0
-THETA = 0.15
-SIGMA = 0.20
+THETA = 0.05
+SIGMA = 0.05
 
 # Action boundaries
 A0_BOUNDS = [-0.8, 0.8]
-A1_BOUNDS = [-1.5, 1.5]
+A1_BOUNDS = [-0.8, 0.8]
 
 # Should we load a saved net
 PRE_TRAINED_NETS = False
 
 # If we use a pretrained net
 NET_LOAD_PATH = os.path.join(os.path.dirname(
-    __file__), os.pardir) + "/pre_trained_networks/pre_trained_networks"
+    __file__), os.pardir) + "/pre_trained_networks/output-1845000"
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 

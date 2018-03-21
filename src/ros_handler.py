@@ -190,7 +190,9 @@ class RosHandler:
             return 0.0
         else:
             distance = np.linalg.norm(v2)
-            if distance > 2.5 or distance < 0.35:
+            if distance > 4:
+                return -1.0
+            elif distance > 2.5 or distance < 0.35:
                 return 0.0
             elif distance > 1.5:
                 return 1.0 - (distance - 1.5)
