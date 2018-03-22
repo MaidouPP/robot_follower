@@ -24,10 +24,10 @@ FILTER3 = 32
 # FILTER4 = 64
 
 # How fast is learning
-LEARNING_RATE = 0.00005 # 0.0005
+LEARNING_RATE = 0.0001 # 0.0005
 
 # How much do we regularize the weights of the net
-REGULARIZATION_DECAY = 0.001
+REGULARIZATION_DECAY = 0.0
 
 # How fast does the target net track
 TARGET_DECAY = 0.999
@@ -151,6 +151,7 @@ class CriticNetwork:
 
             with tf.variable_scope("fc1"):
                 fc1 = tf.contrib.layers.fully_connected(fc, 128,
+							activation_fn=tf.nn.relu,
                                                         biases_initializer=tf.contrib.layers.xavier_initializer())
 
             with tf.variable_scope("fc2"):
@@ -194,6 +195,7 @@ class CriticNetwork:
 
             with tf.variable_scope("fc1"):
                 fc1 = tf.contrib.layers.fully_connected(fc, 128,
+							activation_fn=tf.nn.relu,
                                                         biases_initializer=tf.contrib.layers.xavier_initializer())
 
             with tf.variable_scope("fc2"):
