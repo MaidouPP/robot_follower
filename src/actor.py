@@ -4,7 +4,7 @@ import utils
 import time
 
 # How fast is learning
-LEARNING_RATE = 0.000001
+LEARNING_RATE = 0.00001
 
 # How fast does the target net track
 TARGET_DECAY = 0.999
@@ -119,7 +119,7 @@ class ActorNetwork:
                 # !!! very dirty method... shixin
                 shape_rest = tmp[1] * tmp[2] * tmp[3]
                 fc = tf.reshape(resnet, [tf.shape(resnet)[0], shape_rest])
-                fc = tf.concat([fc, tf.divide(self.action_input, 10)], axis=1)
+                fc = tf.concat([fc, self.action_input], axis=1)
 
             with tf.variable_scope("fc1"):
                 fc1 = tf.contrib.layers.fully_connected(fc, 128,
@@ -163,7 +163,7 @@ class ActorNetwork:
                 # !!! very dirty method... shixin
                 shape_rest = tmp[1] * tmp[2] * tmp[3]
                 fc = tf.reshape(resnet, [tf.shape(resnet)[0], shape_rest])
-                fc = tf.concat([fc, tf.divide(self.action_input, 10)], axis=1)
+                fc = tf.concat([fc, self.action_input_target], axis=1)
 
             with tf.variable_scope("fc1"):
                 fc1 = tf.contrib.layers.fully_connected(fc, 128,
