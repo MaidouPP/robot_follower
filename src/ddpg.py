@@ -15,15 +15,15 @@ import time
 # from state_visualizer import CostmapVisualizer
 
 # How big are our mini batches
-BATCH_SIZE = 32
+BATCH_SIZE = 64
 
 # How big is our discount factor for rewards
 GAMMA = 0.99
 
 # How does our noise behave (MU = Center value, THETA = How strong is noise pulled to MU, SIGMA = Variance of noise)
 MU = 0.0
-THETA = 0.05
-SIGMA = 0.05
+THETA = 0.15
+SIGMA = 0.20
 
 # Action boundaries
 A0_BOUNDS = [-0.8, 0.8]
@@ -91,8 +91,8 @@ class DDPG:
             #     self.viewer = CostmapVisualizer()
 
             # Hardcode input size and action size
-            self.height = 662
-            self.width = 1
+            self.height = 100
+            self.width = 100
             self.depth = 4
             self.action_dim = 2
 
@@ -150,7 +150,7 @@ class DDPG:
 
             # Initialize a random process the Ornstein-Uhlenbeck process for action exploration
             self.exploration_noise = OUNoise(self.action_dim, MU, THETA, SIGMA)
-            self.noise_flag = True
+            self.noise_flag = False
 
             # Initialize time step
             self.training_step = 0
@@ -175,8 +175,8 @@ class DDPG:
                 next_state_batch, \
                 is_episode_finished_batch = self.data_manager.get_next_batch()
 
-            state_batch = np.divide(state_batch, 10.0)
-            next_state_batch = np.divide(next_state_batch, 10.0)
+            #state_batch = np.divide(state_batch, 10.0)
+            #next_state_batch = np.divide(next_state_batch, 10.0)
 
             # Are we visualizing the first state batch for debugging?
             # If so: We have to scale up the values for grey scale before plotting
@@ -262,7 +262,7 @@ class DDPG:
 
         # normalize the state
         state = state.astype(float)
-        state = np.divide(state, 10.0)
+        #state = np.divide(state, 10.0)
 
         # Get the action
         self.action = self.actor_network.get_action(state, old_action)

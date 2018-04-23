@@ -4,7 +4,7 @@ import utils
 import time
 
 # How fast is learning
-LEARNING_RATE = 0.00001
+LEARNING_RATE = 0.001
 
 # How fast does the target net track
 TARGET_DECAY = 0.999
@@ -15,7 +15,7 @@ PLOT_STEP = 10
 
 class ActorNetwork:
 
-    def __init__(self, state_dim, action_size, depth, session, summary_writer):
+    def __init__(self, width, action_size, depth, session, summary_writer):
 
         self.graph = session.graph
 
@@ -26,7 +26,7 @@ class ActorNetwork:
             self.summary_writer = summary_writer
 
             # Get input dimensions from ddpg
-            self.state_dim = state_dim
+            self.state_width = width
             self.action_size = action_size
             self.depth = depth
 
@@ -40,7 +40,7 @@ class ActorNetwork:
 
             # Create actor network
             self.map_input = tf.placeholder(tf.float32,
-                                            [None, 1, self.state_dim, self.depth],
+                                            [None, self.state_width, self.state_width, self.depth],
                                             name="map_input")
             self.action_input = tf.placeholder(tf.float32, [None, 2])
             self.is_training = tf.placeholder(tf.bool, name='is_training')
@@ -55,7 +55,7 @@ class ActorNetwork:
 
             # Create target actor network
             self.map_input_target = tf.placeholder(tf.float32,
-                                                   [None, 1, self.state_dim, self.depth],
+                                                   [None, self.state_width, self.state_width, self.depth],
                                                    name="map_input_target")
             self.action_input_target = tf.placeholder(tf.float32, [None, 2])
             self.action_output_target = self.create_target_network()
@@ -83,8 +83,7 @@ class ActorNetwork:
                                                      -self.q_gradient_input)
 
             # Define the optimizer
-            self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE,
-                                                    epsilon=0.01).apply_gradients(
+            self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE,).apply_gradients(
                                                         zip(self.parameters_gradients,
                                                             self.actor_variables))
 
@@ -99,19 +98,19 @@ class ActorNetwork:
         with tf.variable_scope('actor'):
 
             with tf.variable_scope("conv1"):
-                conv1 = utils.conv(self.map_input, [1, 5, self.depth, 64], [1, 3])
+                conv1 = utils.conv(self.map_input, [3, 3, self.depth, 64], [1, 1])
                 conv1 = tf.nn.relu(conv1)
                 conv1 = tf.nn.max_pool(conv1,
-                                       ksize=[1, 1, 3, 1],
-                                       strides=[1, 1, 3, 1],
+                                       ksize=[1, 3, 3, 1],
+                                       strides=[1, 3, 3, 1],
                                        padding='SAME')
 
             with tf.variable_scope("resnet"):
-                resnet = utils.resnet_block(conv1, [1, 3,
+                resnet = utils.resnet_block(conv1, [3, 3,
                                conv1.get_shape().as_list()[-1], 64], self.is_training)
                 resnet = tf.nn.avg_pool(resnet,
-                                        ksize=[1, 1, 3, 1],
-                                        strides=[1, 1, 3, 1],
+                                        ksize=[1, 3, 3, 1],
+                                        strides=[1, 3, 3, 1],
                                         padding='SAME')
 
             with tf.variable_scope("fc"):
@@ -143,19 +142,19 @@ class ActorNetwork:
         with tf.variable_scope('actor_target'):
 
             with tf.variable_scope("conv1"):
-                conv1 = utils.conv(self.map_input_target, [1, 5, self.depth, 64], [1, 3])
+                conv1 = utils.conv(self.map_input_target, [3, 3, self.depth, 64], [1, 1])
                 conv1 = tf.nn.relu(conv1)
                 conv1 = tf.nn.max_pool(conv1,
-                                       ksize=[1, 1, 3, 1],
-                                       strides=[1, 1, 3, 1],
+                                       ksize=[1, 3, 3, 1],
+                                       strides=[1, 3, 3, 1],
                                        padding='SAME')
 
             with tf.variable_scope("resnet"):
-                resnet = utils.resnet_block(conv1, [1, 3,
+                resnet = utils.resnet_block(conv1, [3, 3,
                                conv1.get_shape().as_list()[-1], 64], self.is_training)
                 resnet = tf.nn.avg_pool(resnet,
-                                        ksize=[1, 1, 3, 1],
-                                        strides=[1, 1, 3, 1],
+                                        ksize=[1, 3, 3, 1],
+                                        strides=[1, 3, 3, 1],
                                         padding='SAME')
 
             with tf.variable_scope("fc"):

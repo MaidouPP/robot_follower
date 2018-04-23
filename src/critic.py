@@ -24,7 +24,7 @@ FILTER3 = 32
 # FILTER4 = 64
 
 # How fast is learning
-LEARNING_RATE = 0.0001 # 0.0005
+LEARNING_RATE = 0.002
 
 # How much do we regularize the weights of the net
 REGULARIZATION_DECAY = 0.0
@@ -68,7 +68,7 @@ class CriticNetwork:
 
             # Create critic network
             self.map_input = tf.placeholder(
-                "float32", [None, 1, image_size, image_no])
+                "float32", [None, image_size, image_size, image_no])
             self.action_input = tf.placeholder(
                 "float32", [None, action_size], name="action_input")
             self.Q_output = self.create_network()
@@ -83,7 +83,7 @@ class CriticNetwork:
 
             # Create target actor network
             self.map_input_target = tf.placeholder(
-                "float32", [None, 1, image_size, image_no])
+                "float32", [None, image_size, image_size, image_no])
             self.action_input_target = tf.placeholder(
                 "float32", [None, action_size])
             self.Q_output_target = self.create_target_network()
@@ -128,19 +128,19 @@ class CriticNetwork:
 
             with tf.variable_scope("conv1"):
                 conv1 = utils.conv(self.map_input,
-                                   [1, 5, self.image_no, 64], [1, 3])
+                                   [3, 3, self.image_no, 64], [1, 1])
                 conv1 = tf.nn.relu(conv1)
                 conv1 = tf.nn.max_pool(conv1,
-                                       ksize=[1, 1, 3, 1],
-                                       strides=[1, 1, 3, 1],
+                                       ksize=[1, 3, 3, 1],
+                                       strides=[1, 3, 3, 1],
                                        padding='SAME')
 
             with tf.variable_scope("resnet"):
                 resnet = utils.resnet_block(conv1,
-                                            [1, 3, conv1.get_shape()[-1], 64], self.is_training)
+                                            [3, 3, conv1.get_shape()[-1], 64], self.is_training)
                 resnet = tf.nn.avg_pool(resnet,
-                                        ksize=[1, 1, 3, 1],
-                                        strides=[1, 1, 3, 1],
+                                        ksize=[1, 3, 3, 1],
+                                        strides=[1, 3, 3, 1],
                                         padding='SAME')
 
             with tf.variable_scope("fc"):
@@ -172,19 +172,19 @@ class CriticNetwork:
 
             with tf.variable_scope("conv1"):
                 conv1 = utils.conv(self.map_input_target,
-                                   [1, 5, self.image_no, 64], [1, 3])
+                                   [3, 3, self.image_no, 64], [1, 1])
                 conv1 = tf.nn.relu(conv1)
                 conv1 = tf.nn.max_pool(conv1,
-                                       ksize=[1, 1, 3, 1],
-                                       strides=[1, 1, 3, 1],
+                                       ksize=[1, 3, 3, 1],
+                                       strides=[1, 3, 3, 1],
                                        padding='SAME')
 
             with tf.variable_scope("resnet"):
                 resnet = utils.resnet_block(conv1,
-                                            [1, 3, conv1.get_shape()[-1], 64], self.is_training)
+                                            [3, 3, conv1.get_shape()[-1], 64], self.is_training)
                 resnet = tf.nn.avg_pool(resnet,
-                                        ksize=[1, 1, 3, 1],
-                                        strides=[1, 1, 3, 1],
+                                        ksize=[1, 3, 3, 1],
+                                        strides=[1, 3, 3, 1],
                                         padding='SAME')
 
             with tf.variable_scope("fc"):

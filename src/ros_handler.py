@@ -11,7 +11,7 @@ from gazebo_msgs.msg import ModelState
 from geometry_msgs.msg import Twist
 from geometry_msgs.msg import Point
 from nav_msgs.msg import Odometry
-from simulation_walk.msg import Laser4
+from simulation_walk.msg import Laser4, CostMap
 from std_msgs.msg import Bool
 
 
@@ -44,7 +44,7 @@ class RosHandler:
         rospy.sleep(0.2)
 
         self._sub_laser = rospy.Subscriber(
-            "/simulation_walk/laser4", Laser4, self._input_callback_laser)
+            "/simulation_walk/costmap", CostMap, self._input_callback_laser)
         self._sub_person_pos = rospy.Subscriber(
             "/actor_pos", Point, self._input_callback_person_pos)
         self._sub_person_target = rospy.Subscriber(
@@ -60,6 +60,8 @@ class RosHandler:
         self._pub_robot_pos = rospy.Publisher("/gazebo/set_model_state", ModelState, queue_size=10)
         self._pub_end = rospy.Publisher("/bump", Bool, queue_size=10)
         self.end_of_episode = False
+
+	self._len_grid = 100
         # self._end_of_episode.data = True
 
         # rospy.init_node("ros_handler", anonymous=True)
@@ -69,10 +71,10 @@ class RosHandler:
         # self._publish_action()
 
     def _input_callback_laser(self, data):
-        ranges = np.array(data.ranges)
+        ranges = np.array(data.data)
         # print ranges.shape
-        self._state = ranges.reshape((1, self._length, self._depth))
-        self._state[self._state == np.inf] = 30
+        self._state = ranges.reshape((self._len_grid, self._len_grid, self._depth))
+#        self._state[self._state == np.inf] = 30
         # self._state = self._state / 10.0
         self._reward = self._calculate_reward()
         self._new_msg_flag = True
