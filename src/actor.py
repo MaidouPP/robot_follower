@@ -42,7 +42,7 @@ class ActorNetwork:
             self.map_input = tf.placeholder(tf.float32,
                                             [None, self.state_width, self.state_width, self.depth],
                                             name="map_input")
-            self.action_input = tf.placeholder(tf.float32, [None, 2])
+#            self.action_input = tf.placeholder(tf.float32, [None, 2])
             self.is_training = tf.placeholder(tf.bool, name='is_training')
             self.action_output = self.create_network()
 
@@ -57,7 +57,7 @@ class ActorNetwork:
             self.map_input_target = tf.placeholder(tf.float32,
                                                    [None, self.state_width, self.state_width, self.depth],
                                                    name="map_input_target")
-            self.action_input_target = tf.placeholder(tf.float32, [None, 2])
+ #           self.action_input_target = tf.placeholder(tf.float32, [None, 2])
             self.action_output_target = self.create_target_network()
 
             with tf.variable_scope("actor_target") as scope:
@@ -83,7 +83,7 @@ class ActorNetwork:
                                                      -self.q_gradient_input)
 
             # Define the optimizer
-            self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE,).apply_gradients(
+            self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE).apply_gradients(
                                                         zip(self.parameters_gradients,
                                                             self.actor_variables))
 
@@ -118,7 +118,7 @@ class ActorNetwork:
                 # !!! very dirty method... shixin
                 shape_rest = tmp[1] * tmp[2] * tmp[3]
                 fc = tf.reshape(resnet, [tf.shape(resnet)[0], shape_rest])
-                fc = tf.concat([fc, self.action_input], axis=1)
+#                fc = tf.concat([fc, self.action_input], axis=1)
 
             with tf.variable_scope("fc1"):
                 fc1 = tf.contrib.layers.fully_connected(fc, 128,
@@ -162,7 +162,7 @@ class ActorNetwork:
                 # !!! very dirty method... shixin
                 shape_rest = tmp[1] * tmp[2] * tmp[3]
                 fc = tf.reshape(resnet, [tf.shape(resnet)[0], shape_rest])
-                fc = tf.concat([fc, self.action_input_target], axis=1)
+#                fc = tf.concat([fc, self.action_input_target], axis=1)
 
             with tf.variable_scope("fc1"):
                 fc1 = tf.contrib.layers.fully_connected(fc, 128,
@@ -209,13 +209,14 @@ class ActorNetwork:
 
         saver_target.restore(self.sess, filter_path)
 
+#    def train(self, q_gradient_batch, state_batch, action_batch):
     def train(self, q_gradient_batch, state_batch, action_batch):
 
         # Train the actor net
         self.sess.run(self.optimizer, feed_dict={
             self.q_gradient_input: q_gradient_batch,
             self.map_input: state_batch,
-            self.action_input: action_batch,
+#            self.action_input: action_batch,
             self.is_training: True})
 
         # Update the target
@@ -231,20 +232,22 @@ class ActorNetwork:
             # tf.assign(self.actor_target_variables[i], \
             #           self.ema_obj.average(self.actor_variables[i]))
 
-    def get_action(self, state, old_action):
+#    def get_action(self, state, old_action):
+    def get_action(self, state):
 
         state = np.expand_dims(state, axis=0)
         return self.sess.run(self.action_output, feed_dict={
             self.map_input: state,
-            self.action_input: old_action,
+#            self.action_input: old_action,
             self.is_training: False})
 
-    def evaluate(self, state_batch, action_batch):
+#    def evaluate(self, state_batch, action_batch):
+    def evaluate(self, state_batch):
 
         # Get an action batch
         actions = self.sess.run(self.action_output,
                                 feed_dict={self.map_input: state_batch,
-                                           self.action_input: action_batch,
+        #                                   self.action_input: action_batch,
                                            self.is_training: False})
 
         # Create summaries for the actions
@@ -269,12 +272,13 @@ class ActorNetwork:
 
         return actions
 
-    def target_evaluate(self, state_batch, action_batch):
+#    def target_evaluate(self, state_batch, action_batch):
+    def target_evaluate(self, state_batch):
 
         # Get action batch
         actions = self.sess.run(self.action_output_target,
                                 feed_dict={self.map_input_target: state_batch,
-                                           self.action_input_target: action_batch,
+        #                                   self.action_input_target: action_batch,
                                            self.is_training: False})
 
         # Create summaries for the target actions

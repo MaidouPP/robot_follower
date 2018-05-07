@@ -192,8 +192,10 @@ class DDPG:
 
             # start = time.time()
             y_batch = []
+            # next_action_batch = self.actor_network.target_evaluate(
+            #    next_state_batch, action_batch)
             next_action_batch = self.actor_network.target_evaluate(
-                next_state_batch, action_batch)
+                next_state_batch)
             q_value_batch = self.critic_network.target_evaluate(
                 next_state_batch, next_action_batch)
             # done = time.time()
@@ -201,10 +203,10 @@ class DDPG:
             # print "forward actor and critic time is: ", elapsed
 
             for i in range(0, BATCH_SIZE):
-                if is_episode_finished_batch[i]:
-                    y_batch.append([reward_batch[i]])
-                else:
-                    y_batch.append(reward_batch[i] + GAMMA * q_value_batch[i])
+#                if is_episode_finished_batch[i]:
+#                    y_batch.append([reward_batch[i]])
+#                else:
+                y_batch.append(reward_batch[i] + GAMMA * q_value_batch[i])
 
             # Now that we have the y batch lets train the critic
             # start = time.time()
@@ -218,16 +220,16 @@ class DDPG:
             # Get the action batch so we can calculate the action gradient with it
             # Then get the action gradient batch and adapt the gradient with the gradient inverting method
             # start = time.time()
-            action_batch_for_gradients = self.actor_network.evaluate(
-                state_batch, action_batch)
-            # done = time.time()
+            # action_batch_for_gradients = self.actor_network.evaluate(
+            #    state_batch, action_batch)
+            action_batch_for_gradients = self.actor_network.evaluate(state_batch)
             # elapsed = done - start
             # print "forward action after critic training time is: ", elapsed
 
             q_gradient_batch = self.critic_network.get_action_gradient(
                 state_batch, action_batch_for_gradients)
-            q_gradient_batch = self.grad_inv.invert(
-                q_gradient_batch, action_batch_for_gradients)
+#            q_gradient_batch = self.grad_inv.invert(
+#                q_gradient_batch, action_batch_for_gradients)
 
             # Now we can train the actor
             # start = time.time()
@@ -265,7 +267,8 @@ class DDPG:
         #state = np.divide(state, 10.0)
 
         # Get the action
-        self.action = self.actor_network.get_action(state, old_action)
+        # self.action = self.actor_network.get_action(state, old_action)
+        self.action = self.actor_network.get_action(state)
         self.action = self.action.reshape((2,))
 
         # Are we using noise?

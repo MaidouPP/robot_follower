@@ -193,26 +193,29 @@ class RosHandler:
             msg.data = True
             self._pub_end.publish(msg)
 
+            # print "Died!!! reward is: ", reward - 100
             return reward - 100.0
 
         if np.dot(v1_, v2_) < 0:
-            return reward - 1.0
+            reward -= 1.0
         else:
             distance = np.linalg.norm(v2)
             if distance > 5:
-                return reward - 3.0
+                reward -= 3.0
             elif distance > 3:
-                return reward - 2.0
+                reward -= 2.0
             elif distance > 2:
-                return reward - 1.0
+                reward -= 1.0
             else:
                 if (self._calculate_angle(ortho_v1, v2_) < math.pi/4 and \
                    self._calculate_angle(ortho_v1, v2_) > 0) or \
                    (self._calculate_angle(-ortho_v1, v2_) < math.pi/4 and \
                     self._calculate_angle(-ortho_v1, v2_) > 0):
-                       return reward
+                    reward = reward
                 else:
-                    return reward - 0.1
+                    reward -= 0.1
+        # print "      reward: ", reward
+        return reward
 
     @staticmethod
     def _calculate_angle(vec1, vec2):
