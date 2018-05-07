@@ -15,10 +15,10 @@ import time
 # from state_visualizer import CostmapVisualizer
 
 # How big are our mini batches
-BATCH_SIZE = 64
+BATCH_SIZE = 16
 
 # How big is our discount factor for rewards
-GAMMA = 0.99
+GAMMA = 0.8
 
 # How does our noise behave (MU = Center value, THETA = How strong is noise pulled to MU, SIGMA = Variance of noise)
 MU = 0.0
@@ -60,7 +60,7 @@ VISUALIZE_BUFFER = False
 SAVE_STEP = 1000
 
 # Max training step with noise
-MAX_NOISE_STEP = 300000
+MAX_NOISE_STEP = 100000
 
 
 class DDPG:
@@ -150,7 +150,7 @@ class DDPG:
 
             # Initialize a random process the Ornstein-Uhlenbeck process for action exploration
             self.exploration_noise = OUNoise(self.action_dim, MU, THETA, SIGMA)
-            self.noise_flag = False
+            self.noise_flag = True
 
             # Initialize time step
             self.training_step = 0
