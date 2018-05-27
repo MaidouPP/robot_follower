@@ -193,7 +193,7 @@ class RosHandler:
             msg.data = True
             self._pub_end.publish(msg)
 
-            # print "Died!!! reward is: ", reward - 100
+            print "Died!!! reward is: ", reward - 100
             return reward - 100.0
 
         if np.dot(v1_, v2_) < 0:
@@ -214,7 +214,7 @@ class RosHandler:
                     reward = reward
                 else:
                     reward -= 0.1
-        # print "      reward: ", reward
+        print "      reward: ", reward
         return reward
 
     @staticmethod

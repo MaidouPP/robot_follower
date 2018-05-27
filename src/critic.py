@@ -119,6 +119,8 @@ class CriticNetwork:
             self.action_grads_mean_plot = [0, 0]
             self.td_error_plot = 0
 
+            self.sess.run(tf.initialize_all_variables())
+
             # Training step counter (gets incremented after each training step)
             self.train_counter = 0
 

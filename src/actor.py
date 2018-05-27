@@ -91,6 +91,8 @@ class ActorNetwork:
             self.actions_mean_plot = [0, 0]
             self.target_actions_mean_plot = [0, 0]
 
+            self.sess.run(tf.initialize_all_variables())
+
             self.train_counter = 0
 
     def create_network(self):
@@ -134,6 +136,7 @@ class ActorNetwork:
                 out = tf.contrib.layers.fully_connected(fc2, 2,
                                                         activation_fn=None,
                                                         biases_initializer=tf.contrib.layers.xavier_initializer())
+                out = 0.8 * tf.tanh(out)
 
             return out
 
@@ -178,6 +181,8 @@ class ActorNetwork:
                 out = tf.contrib.layers.fully_connected(fc2, 2,
                                                         activation_fn=None,
                                                         biases_initializer=tf.contrib.layers.xavier_initializer())
+
+            out = 0.8 * tf.tanh(out)
 
             return out
 
