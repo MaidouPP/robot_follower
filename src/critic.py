@@ -138,12 +138,18 @@ class CriticNetwork:
                                        padding='SAME')
 
             with tf.variable_scope("resnet"):
-                resnet = utils.resnet_block(conv1,
-                                            [3, 3, conv1.get_shape()[-1], 64], self.is_training)
-                resnet = tf.nn.avg_pool(resnet,
-                                        ksize=[1, 3, 3, 1],
-                                        strides=[1, 3, 3, 1],
-                                        padding='SAME')
+                resnet = utils.conv(conv1, [3, 3, conv1.get_shape().as_list()[-1], 64], [1, 1])
+                resnet = tf.nn.relu(conv1)
+                resnet = tf.nn.avg_pool(conv1,
+                                       ksize=[1, 3, 3, 1],
+                                       strides=[1, 3, 3, 1],
+                                       padding='SAME')
+                # resnet = utils.resnet_block(conv1,
+                #                             [3, 3, conv1.get_shape()[-1], 64], self.is_training)
+                # resnet = tf.nn.avg_pool(resnet,
+                #                         ksize=[1, 3, 3, 1],
+                #                         strides=[1, 3, 3, 1],
+                #                         padding='SAME')
 
             with tf.variable_scope("fc"):
                 tmp = resnet.get_shape().as_list()
@@ -182,12 +188,18 @@ class CriticNetwork:
                                        padding='SAME')
 
             with tf.variable_scope("resnet"):
-                resnet = utils.resnet_block(conv1,
-                                            [3, 3, conv1.get_shape()[-1], 64], self.is_training)
-                resnet = tf.nn.avg_pool(resnet,
-                                        ksize=[1, 3, 3, 1],
-                                        strides=[1, 3, 3, 1],
-                                        padding='SAME')
+                resnet = utils.conv(conv1, [3, 3, conv1.get_shape().as_list()[-1], 64], [1, 1])
+                resnet = tf.nn.relu(conv1)
+                resnet = tf.nn.avg_pool(conv1,
+                                       ksize=[1, 3, 3, 1],
+                                       strides=[1, 3, 3, 1],
+                                       padding='SAME')
+                # resnet = utils.resnet_block(conv1,
+                #                             [3, 3, conv1.get_shape()[-1], 64], self.is_training)
+                # resnet = tf.nn.avg_pool(resnet,
+                #                         ksize=[1, 3, 3, 1],
+                #                         strides=[1, 3, 3, 1],
+                #                         padding='SAME')
 
             with tf.variable_scope("fc"):
                 tmp = resnet.get_shape().as_list()

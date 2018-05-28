@@ -203,10 +203,10 @@ class DDPG:
             # print "forward actor and critic time is: ", elapsed
 
             for i in range(0, BATCH_SIZE):
-                if is_episode_finished_batch[i]:
-                    y_batch.append([reward_batch[i]])
-                else:
-                    y_batch.append(reward_batch[i] + GAMMA * q_value_batch[i])
+                # if is_episode_finished_batch[i]:
+                #     y_batch.append([reward_batch[i]])
+                # else:
+                y_batch.append(reward_batch[i] + GAMMA * q_value_batch[i])
 
             # Now that we have the y batch lets train the critic
             # start = time.time()
