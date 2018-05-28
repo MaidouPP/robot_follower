@@ -68,7 +68,7 @@ class CriticNetwork:
 
             # Create critic network
             self.map_input = tf.placeholder(
-                "float32", [None, 1, image_size, image_no])
+                "float32", [None, image_size])
             self.action_input = tf.placeholder(
                 "float32", [None, action_size], name="action_input")
             self.Q_output = self.create_network()
@@ -83,7 +83,7 @@ class CriticNetwork:
 
             # Create target actor network
             self.map_input_target = tf.placeholder(
-                "float32", [None, 1, image_size, image_no])
+                "float32", [None, image_size])
             self.action_input_target = tf.placeholder(
                 "float32", [None, action_size])
             self.Q_output_target = self.create_target_network()
@@ -126,89 +126,45 @@ class CriticNetwork:
 
         with tf.variable_scope('critic'):
 
-            with tf.variable_scope("conv1"):
-                conv1 = utils.conv(self.map_input,
-                                   [1, 5, self.image_no, 64], [1, 3])
-                conv1 = tf.nn.relu(conv1)
-                conv1 = tf.nn.max_pool(conv1,
-                                       ksize=[1, 1, 3, 1],
-                                       strides=[1, 1, 3, 1],
-                                       padding='SAME')
-
-            with tf.variable_scope("resnet"):
-                resnet = utils.resnet_block(conv1,
-                                            [1, 3, conv1.get_shape()[-1], 64], self.is_training)
-                resnet = tf.nn.avg_pool(resnet,
-                                        ksize=[1, 1, 3, 1],
-                                        strides=[1, 1, 3, 1],
-                                        padding='SAME')
-
-            with tf.variable_scope("fc"):
-                tmp = resnet.get_shape().as_list()
-                shape_rest = tmp[1] * tmp[2] * tmp[3]
-                fc = tf.reshape(resnet, [tf.shape(resnet)[0], shape_rest])
-                fc = tf.concat([fc, self.action_input], axis=1)
-
             with tf.variable_scope("fc1"):
-                fc1 = tf.contrib.layers.fully_connected(fc, 128,
-							activation_fn=tf.nn.relu,
+                fc1 = tf.contrib.layers.fully_connected(self.map_input, 128,
+                                                        activation_fn=tf.nn.relu,
                                                         biases_initializer=tf.contrib.layers.xavier_initializer())
+                fc1 = tf.concat([fc1, self.action_input], axis=1)
 
             with tf.variable_scope("fc2"):
                 fc2 = tf.contrib.layers.fully_connected(fc1, 64,
                                                         activation_fn=tf.nn.relu,
                                                         biases_initializer=tf.contrib.layers.xavier_initializer())
 
-            with tf.variable_scope("out"):
+            with tf.variable_scope("fc3"):
                 out = tf.contrib.layers.fully_connected(fc2, 1,
                                                         activation_fn=None,
                                                         biases_initializer=tf.contrib.layers.xavier_initializer())
 
-        return out
+            return out
 
     def create_target_network(self):
 
         with tf.variable_scope('critic_target'):
 
-            with tf.variable_scope("conv1"):
-                conv1 = utils.conv(self.map_input_target,
-                                   [1, 5, self.image_no, 64], [1, 3])
-                conv1 = tf.nn.relu(conv1)
-                conv1 = tf.nn.max_pool(conv1,
-                                       ksize=[1, 1, 3, 1],
-                                       strides=[1, 1, 3, 1],
-                                       padding='SAME')
-
-            with tf.variable_scope("resnet"):
-                resnet = utils.resnet_block(conv1,
-                                            [1, 3, conv1.get_shape()[-1], 64], self.is_training)
-                resnet = tf.nn.avg_pool(resnet,
-                                        ksize=[1, 1, 3, 1],
-                                        strides=[1, 1, 3, 1],
-                                        padding='SAME')
-
-            with tf.variable_scope("fc"):
-                tmp = resnet.get_shape().as_list()
-                shape_rest = tmp[1] * tmp[2] * tmp[3]
-                fc = tf.reshape(resnet, [tf.shape(resnet)[0], shape_rest])
-                fc = tf.concat([fc, self.action_input_target], axis=1)
-
             with tf.variable_scope("fc1"):
-                fc1 = tf.contrib.layers.fully_connected(fc, 128,
-							activation_fn=tf.nn.relu,
+                fc1 = tf.contrib.layers.fully_connected(self.map_input_target, 128,
+                                                        activation_fn=tf.nn.relu,
                                                         biases_initializer=tf.contrib.layers.xavier_initializer())
+                fc1 = tf.concat([fc1, self.action_input_target], axis=1)
 
             with tf.variable_scope("fc2"):
                 fc2 = tf.contrib.layers.fully_connected(fc1, 64,
                                                         activation_fn=tf.nn.relu,
                                                         biases_initializer=tf.contrib.layers.xavier_initializer())
 
-            with tf.variable_scope("out"):
+            with tf.variable_scope("fc3"):
                 out = tf.contrib.layers.fully_connected(fc2, 1,
                                                         activation_fn=None,
                                                         biases_initializer=tf.contrib.layers.xavier_initializer())
 
-        return out
+            return out
 
     def restore_pretrained_weights(self, filter_path):
 

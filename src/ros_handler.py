@@ -19,11 +19,13 @@ class RosHandler:
 
     def __init__(self):
 
+
         self._init = False
 
-        self._depth = 4
-        self._length = 662   # SICK TIM561 laser scanner dimension
-        self._state = np.zeros((1, self._length, self._depth), dtype='float32')
+        self._depth = 1
+        self._length = 2  # SICK TIM561 laser scanner dimension
+        # self._state = np.zeros((1, self._length, self._depth), dtype='float32')
+        self._state = np.zeros((1, self._length))
 
         self._reward = 0.0
         self._action = Twist()
@@ -69,11 +71,13 @@ class RosHandler:
         # self._publish_action()
 
     def _input_callback_laser(self, data):
-        ranges = np.array(data.ranges)
+        # ranges = np.array(data.ranges)
         # print ranges.shape
-        self._state = ranges.reshape((1, self._length, self._depth))
-        self._state[self._state == np.inf] = 30
+        # self._state = ranges.reshape((1, self._length, self._depth))
+        # self._state[self._state == np.inf] = 30
         # self._state = self._state / 10.0
+        self._state = self._person_pos - self._robot_pos
+        # self._state = self._state.reshape((1, -1))
         self._reward = self._calculate_reward()
         self._new_msg_flag = True
 
@@ -155,21 +159,22 @@ class RosHandler:
         # it relates to what map resolution we are using
         # and what map size...
         # for now it limits to 2000*2000 map with real 20*20
-        pos_[0] = pos_[0] + 10
-        pos_[1] = -pos_[1] + 10
-        pos_ = pos_ * 100
-        # print pos_, " ", pos
-        # print self._cost_map[int(pos_[1]), int(pos_[0])]
+        # pos_[0] = pos_[0] + 10
+        # pos_[1] = -pos_[1] + 10
+        # pos_ = pos_ * 100
+        # # print pos_, " ", pos
+        # # print self._cost_map[int(pos_[1]), int(pos_[0])]
         vec = self._person_pos - self._robot_pos
         distance = np.linalg.norm(vec)
-        # print "=== pos_: ", pos_
-        # print "--- pos: ", pos
+        # # print "=== pos_: ", pos_
+        # # print "--- pos: ", pos
         if distance < 0.3:
             return False
-        if self._cost_map[int(pos_[1]), int(pos_[0])] == 0:
-            return True
-        else:
-            return False
+        # if self._cost_map[int(pos_[1]), int(pos_[0])] == 0:
+        #     return True
+        # else:
+        #     return False
+        return True
 
     def _calculate_reward(self):
         v1 = self._person_target - self._person_pos
@@ -177,6 +182,12 @@ class RosHandler:
         v1_ = self._normalize_vec(v1)
         v2_ = self._normalize_vec(v2)
         ortho_v1 = np.array([v1_[1], -v1_[0]])
+        # act_punish = -10 if math.fabs(self.action[0][0]) > 0.8 \
+        #                     or math.fabs(self.action[0][1]) > 0.8 \
+        #               else 0
+
+        reward = 0
+        # reward += act_punish
 
         if not self._valid_pos(self._robot_pos):
             self.end_of_episode = True
@@ -184,26 +195,29 @@ class RosHandler:
             msg.data = True
             self._pub_end.publish(msg)
 
-            return -100.0
+            print "Died!!! reward is: ", reward - 20
+            return reward - 20.0
 
         if np.dot(v1_, v2_) < 0:
-            return 0.0
+            reward -= 1.0
         else:
             distance = np.linalg.norm(v2)
-            if distance > 4:
-                return -1.0
-            elif distance > 2.5 or distance < 0.35:
-                return 0.0
-            elif distance > 1.5:
-                return 1.0 - (distance - 1.5)
+            if distance > 5:
+                reward -= 3.0
+            elif distance > 3:
+                reward -= 2.0
+            elif distance > 2:
+                reward -= 1.0
             else:
                 if (self._calculate_angle(ortho_v1, v2_) < math.pi/4 and \
                    self._calculate_angle(ortho_v1, v2_) > 0) or \
                    (self._calculate_angle(-ortho_v1, v2_) < math.pi/4 and \
                     self._calculate_angle(-ortho_v1, v2_) > 0):
-                       return 2.0
+                    reward = reward
                 else:
-                    return 1.0
+                    reward -= 0.1
+        print "      reward: ", reward
+        return reward
 
     @staticmethod
     def _calculate_angle(vec1, vec2):

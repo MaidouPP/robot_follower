@@ -78,10 +78,10 @@ class DataManager:
 
         # decode feature example
         features = tf.parse_single_example(serialized_experience, features={
-            'state': tf.FixedLenFeature([2648], tf.float32),
+            'state': tf.FixedLenFeature([2], tf.float32),
             'action': tf.FixedLenFeature([2], tf.float32),
             'reward': tf.FixedLenFeature([1], tf.float32),
-            'next_state': tf.FixedLenFeature([2648], tf.float32),
+            'next_state': tf.FixedLenFeature([2], tf.float32),
             'is_episode_finished': tf.FixedLenFeature([1], tf.int64)})
 
         # state = tf.decode_raw(features['state'], tf.float32)
@@ -94,12 +94,12 @@ class DataManager:
 
         # reshape gridmaps
         # print state.shape
-        state = tf.reshape(state, [1, 662, 4])
-        next_state = tf.reshape(next_state, [1, 662, 4])
+        state = tf.reshape(state, [2])
+        next_state = tf.reshape(next_state, [2])
 
         # batch shuffling is done in a seperate thread
         state_batch, action_batch, reward_batch, next_state_batch, is_episode_finished_batch = tf.train.shuffle_batch(
-            [state, action, reward, next_state, is_episode_finished], batch_size=self.batch_size, capacity=1000,
+            [state, action, reward, next_state, is_episode_finished], batch_size=self.batch_size, capacity=20000,
             min_after_dequeue=0)
 
         return state_batch, action_batch, reward_batch, next_state_batch, is_episode_finished_batch
@@ -131,7 +131,7 @@ class DataManager:
     def check_for_enqueue(self):
 
         file_num = self.sess.run(self.filename_queue_size)
-        # print "file num is : ", file_num, " and ", self.experience_path
+        # print "file num is : ", file_num, " and ", self.experience_path, " and ", self.file_counter
         if file_num < MIN_FILES_IN_QUEUE and self.file_counter >= 1:
             print "enqueuing files"
             if self.file_counter > 0:

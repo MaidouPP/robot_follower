@@ -4,6 +4,7 @@
 import rospy
 import os
 import tensorflow as tf
+import time
 from ddpg import DDPG
 from ros_handler import RosHandler
 
@@ -42,11 +43,11 @@ def main():
                 action = agent.get_action(ros_handler.state,
                                           ros_handler.old_action)
                 ros_handler.publish_action(action)
+
             agent.set_experience(ros_handler.state, ros_handler.reward,
                                  ros_handler.end_of_episode)
         else:
             agent.train()
-
 
 if __name__ == '__main__':
     main()

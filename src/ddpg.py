@@ -22,7 +22,7 @@ GAMMA = 0.99
 
 # How does our noise behave (MU = Center value, THETA = How strong is noise pulled to MU, SIGMA = Variance of noise)
 MU = 0.0
-THETA = 0.05
+THETA = 0.15
 SIGMA = 0.05
 
 # Action boundaries
@@ -91,9 +91,9 @@ class DDPG:
             #     self.viewer = CostmapVisualizer()
 
             # Hardcode input size and action size
-            self.height = 662
+            self.height = 2
             self.width = 1
-            self.depth = 4
+            self.depth = 1
             self.action_dim = 2
 
             # Initialize the current action and the old action and old state for setting experiences
@@ -201,10 +201,10 @@ class DDPG:
             # print "forward actor and critic time is: ", elapsed
 
             for i in range(0, BATCH_SIZE):
-                if is_episode_finished_batch[i]:
-                    y_batch.append([reward_batch[i]])
-                else:
-                    y_batch.append(reward_batch[i] + GAMMA * q_value_batch[i])
+                # if is_episode_finished_batch[i]:
+                #     y_batch.append([reward_batch[i]])
+                # else:
+                y_batch.append(reward_batch[i] + GAMMA * q_value_batch[i])
 
             # Now that we have the y batch lets train the critic
             # start = time.time()
@@ -252,11 +252,7 @@ class DDPG:
             if self.training_step % 400 == 0:
                 print "iter: ", self.training_step
 
-        # start_ = time.time()
         self.data_manager.check_for_enqueue()
-        # done = time.time()
-        # elapsed = done - start_
-        # print "############ check enqueue time is: ", elapsed
 
     def get_action(self, state, old_action):
 
