@@ -180,12 +180,12 @@ class RosHandler:
         v1_ = self._normalize_vec(v1)
         v2_ = self._normalize_vec(v2)
         ortho_v1 = np.array([v1_[1], -v1_[0]])
-        act_punish = -10 if math.fabs(self.action[0][0]) > 0.8 \
-                            or math.fabs(self.action[0][1]) > 0.8 \
-                      else 0
+#        act_punish = -10 if math.fabs(self.action[0][0]) > 0.8 \
+#                            or math.fabs(self.action[0][1]) > 0.8 \
+#                      else 0
 
         reward = 0
-        reward += act_punish
+#        reward += act_punish
 
         if not self._valid_pos(self._robot_pos):
             self.end_of_episode = True

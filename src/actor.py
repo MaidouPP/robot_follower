@@ -4,7 +4,7 @@ import utils
 import time
 
 # How fast is learning
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.000001
 
 # How fast does the target net track
 TARGET_DECAY = 0.999
