@@ -189,33 +189,40 @@ class RosHandler:
         reward = 0
         # reward += act_punish
 
-        if not self._valid_pos(self._robot_pos):
-            self.end_of_episode = True
-            msg = Bool()
-            msg.data = True
-            self._pub_end.publish(msg)
+#        if not self._valid_pos(self._robot_pos):
+#            self.end_of_episode = True
+#            msg = Bool()
+#            msg.data = True
+#            self._pub_end.publish(msg)
+#
+#            print "Died!!! reward is: ", reward - 20
+#            return reward - 20.0
 
-            print "Died!!! reward is: ", reward - 20
-            return reward - 20.0
-
-        if np.dot(v1_, v2_) < 0:
-            reward -= 1.0
+        distance = np.linalg.norm(v2)
+        if distance > 1.0:
+            reward -= 0.1*(distance - 1)
         else:
-            distance = np.linalg.norm(v2)
-            if distance > 5:
-                reward -= 3.0
-            elif distance > 3:
-                reward -= 2.0
-            elif distance > 2:
-                reward -= 1.0
-            else:
-                if (self._calculate_angle(ortho_v1, v2_) < math.pi/4 and \
-                   self._calculate_angle(ortho_v1, v2_) > 0) or \
-                   (self._calculate_angle(-ortho_v1, v2_) < math.pi/4 and \
-                    self._calculate_angle(-ortho_v1, v2_) > 0):
-                    reward = reward
-                else:
-                    reward -= 0.1
+            if np.dot(v1_, v2_) < 0:
+                reward -= 0.1
+
+#        if np.dot(v1_, v2_) < 0:
+#            reward -= 1.0
+#        else:
+#            if distance > 5:
+#                reward -= 3.0
+#            elif distance > 3:
+#                reward -= 2.0
+#            elif distance > 2:
+#                reward -= 1.0
+#            else:
+#                if (self._calculate_angle(ortho_v1, v2_) < math.pi/4 and \
+#                   self._calculate_angle(ortho_v1, v2_) > 0) or \
+#                   (self._calculate_angle(-ortho_v1, v2_) < math.pi/4 and \
+#                    self._calculate_angle(-ortho_v1, v2_) > 0):
+#                    reward = reward
+#                else:
+#                    reward -= 0.1
+
         print "      reward: ", reward
         return reward
 
