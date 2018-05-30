@@ -83,8 +83,7 @@ class ActorNetwork:
                                                      -self.q_gradient_input)
 
             # Define the optimizer
-            self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE,
-                                                    epsilon=0.01).apply_gradients(
+            self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE).apply_gradients(
                                                         zip(self.parameters_gradients,
                                                             self.actor_variables))
 
@@ -119,7 +118,7 @@ class ActorNetwork:
                 # !!! very dirty method... shixin
                 shape_rest = tmp[1] * tmp[2] * tmp[3]
                 fc = tf.reshape(resnet, [tf.shape(resnet)[0], shape_rest])
-                fc = tf.concat([fc, self.action_input], axis=1)
+#                fc = tf.concat([fc, self.action_input], axis=1)
 
             with tf.variable_scope("fc1"):
                 fc1 = tf.contrib.layers.fully_connected(fc, 128,
@@ -135,6 +134,8 @@ class ActorNetwork:
                 out = tf.contrib.layers.fully_connected(fc2, 2,
                                                         activation_fn=None,
                                                         biases_initializer=tf.contrib.layers.xavier_initializer())
+
+                out = 0.8 * tf.tanh(out)
 
             return out
 
@@ -163,7 +164,6 @@ class ActorNetwork:
                 # !!! very dirty method... shixin
                 shape_rest = tmp[1] * tmp[2] * tmp[3]
                 fc = tf.reshape(resnet, [tf.shape(resnet)[0], shape_rest])
-                fc = tf.concat([fc, self.action_input_target], axis=1)
 
             with tf.variable_scope("fc1"):
                 fc1 = tf.contrib.layers.fully_connected(fc, 128,
@@ -179,6 +179,7 @@ class ActorNetwork:
                 out = tf.contrib.layers.fully_connected(fc2, 2,
                                                         activation_fn=None,
                                                         biases_initializer=tf.contrib.layers.xavier_initializer())
+                out = 0.8 * tf.tanh(out)
 
             return out
 

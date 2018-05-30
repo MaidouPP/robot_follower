@@ -22,8 +22,8 @@ GAMMA = 0.99
 
 # How does our noise behave (MU = Center value, THETA = How strong is noise pulled to MU, SIGMA = Variance of noise)
 MU = 0.0
-THETA = 0.05
-SIGMA = 0.05
+THETA = 0.15
+SIGMA = 0.2
 
 # Action boundaries
 A0_BOUNDS = [-0.8, 0.8]
@@ -271,14 +271,15 @@ class DDPG:
         # Are we using noise?
         if self.noise_flag:
             # scale noise down to 0 at training step 3000000
-            if self.training_step < MAX_NOISE_STEP:
-                self.action += (MAX_NOISE_STEP - self.training_step) / \
-                    MAX_NOISE_STEP * self.exploration_noise.noise()
+            self.action = 0.8*self.exploration_noise.noise();
+#            if self.training_step < MAX_NOISE_STEP:
+#                self.action += (MAX_NOISE_STEP - self.training_step) / \
+#                    MAX_NOISE_STEP * self.exploration_noise.noise()
             # if action value lies outside of action bounds, rescale the action vector
-            if self.action[0] < A0_BOUNDS[0] or self.action[0] > A0_BOUNDS[1]:
-                self.action *= np.fabs(A0_BOUNDS[0] / self.action[0])
-            if self.action[1] < A0_BOUNDS[0] or self.action[1] > A0_BOUNDS[1]:
-                self.action *= np.fabs(A1_BOUNDS[0] / self.action[1])
+#            if self.action[0] < A0_BOUNDS[0] or self.action[0] > A0_BOUNDS[1]:
+#                self.action *= np.fabs(A0_BOUNDS[0] / self.action[0])
+#            if self.action[1] < A0_BOUNDS[0] or self.action[1] > A0_BOUNDS[1]:
+#                self.action *= np.fabs(A1_BOUNDS[0] / self.action[1])
 
         # Life q value output for this action and state
         self.print_q_value(state, self.action)

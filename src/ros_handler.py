@@ -184,26 +184,37 @@ class RosHandler:
             msg.data = True
             self._pub_end.publish(msg)
 
-            return -100.0
+            print "Died!! reward: -50"
+            return -5.0
 
-        if np.dot(v1_, v2_) < 0:
-            return 0.0
+        reward = 0.0
+        distance = np.linalg.norm(v2)
+        if distance > 1.0:
+            reward -= 0.1 * (distance - 1)
         else:
-            distance = np.linalg.norm(v2)
-            if distance > 4:
-                return -1.0
-            elif distance > 2.5 or distance < 0.35:
-                return 0.0
-            elif distance > 1.5:
-                return 1.0 - (distance - 1.5)
-            else:
-                if (self._calculate_angle(ortho_v1, v2_) < math.pi/4 and \
-                   self._calculate_angle(ortho_v1, v2_) > 0) or \
-                   (self._calculate_angle(-ortho_v1, v2_) < math.pi/4 and \
-                    self._calculate_angle(-ortho_v1, v2_) > 0):
-                       return 2.0
-                else:
-                    return 1.0
+            if np.dot(v1_, v2_) < 0:
+                reward -= 0.1
+        # else:
+        #     distance = np.linalg.norm(v2)
+        #     if distance > 1.0:
+        #         reward -= 0.1 * (distance-1)
+        #     # if distance > 5.0:
+        #     #     reward -= 3.0
+        #     # elif distance > 3.0:
+        #     #     reward -= 2.0
+        #     # elif distance > 2.0:
+        #     #     reward -= 1.0
+        #     else:
+        #         # if (self._calculate_angle(ortho_v1, v2_) < math.pi/4 and \
+        #         #    self._calculate_angle(ortho_v1, v2_) > 0) or \
+        #         #    (self._calculate_angle(-ortho_v1, v2_) < math.pi/4 and \
+        #         #     self._calculate_angle(-ortho_v1, v2_) > 0):
+        #         #        reward = reward
+        #         # else:
+        #         reward = reward
+
+        print "     reward: ", reward
+        return reward
 
     @staticmethod
     def _calculate_angle(vec1, vec2):

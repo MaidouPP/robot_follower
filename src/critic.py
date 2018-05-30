@@ -105,7 +105,7 @@ class CriticNetwork:
 
             # Define the optimizer
             self.optimizer = tf.train.AdamOptimizer(
-                LEARNING_RATE, epsilon=0.01).minimize(self.loss)
+                LEARNING_RATE).minimize(self.loss)
 
             self.critic_target_ema = [tf.assign(self.critic_target_variables[i],
                                                 self.ema_obj.average(self.critic_variables[i]))
