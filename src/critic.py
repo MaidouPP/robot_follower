@@ -130,15 +130,20 @@ class CriticNetwork:
                 fc1 = tf.contrib.layers.fully_connected(self.map_input, 128,
                                                         activation_fn=tf.nn.relu,
                                                         biases_initializer=tf.contrib.layers.xavier_initializer())
-                fc1 = tf.concat([fc1, self.action_input], axis=1)
 
             with tf.variable_scope("fc2"):
-                fc2 = tf.contrib.layers.fully_connected(fc1, 64,
+                fc2 = tf.contrib.layers.fully_connected(fc1, 128,
+                                                        activation_fn=tf.nn.relu,
+                                                        biases_initializer=tf.contrib.layers.xavier_initializer())
+                fc2 = tf.concat([fc2, self.action_input], axis=1)
+            
+            with tf.variable_scope("fc3"):
+                fc3 = tf.contrib.layers.fully_connected(fc2, 64,
                                                         activation_fn=tf.nn.relu,
                                                         biases_initializer=tf.contrib.layers.xavier_initializer())
 
-            with tf.variable_scope("fc3"):
-                out = tf.contrib.layers.fully_connected(fc2, 1,
+            with tf.variable_scope("fc4"):
+                out = tf.contrib.layers.fully_connected(fc3, 1,
                                                         activation_fn=None,
                                                         biases_initializer=tf.contrib.layers.xavier_initializer())
 
@@ -152,15 +157,20 @@ class CriticNetwork:
                 fc1 = tf.contrib.layers.fully_connected(self.map_input_target, 128,
                                                         activation_fn=tf.nn.relu,
                                                         biases_initializer=tf.contrib.layers.xavier_initializer())
-                fc1 = tf.concat([fc1, self.action_input_target], axis=1)
 
             with tf.variable_scope("fc2"):
-                fc2 = tf.contrib.layers.fully_connected(fc1, 64,
+                fc2 = tf.contrib.layers.fully_connected(fc1, 128,
+                                                        activation_fn=tf.nn.relu,
+                                                        biases_initializer=tf.contrib.layers.xavier_initializer())
+                fc2 = tf.concat([fc2, self.action_input_target], axis=1)
+            
+            with tf.variable_scope("fc3"):
+                fc3 = tf.contrib.layers.fully_connected(fc2, 64,
                                                         activation_fn=tf.nn.relu,
                                                         biases_initializer=tf.contrib.layers.xavier_initializer())
 
-            with tf.variable_scope("fc3"):
-                out = tf.contrib.layers.fully_connected(fc2, 1,
+            with tf.variable_scope("fc4"):
+                out = tf.contrib.layers.fully_connected(fc3, 1,
                                                         activation_fn=None,
                                                         biases_initializer=tf.contrib.layers.xavier_initializer())
 

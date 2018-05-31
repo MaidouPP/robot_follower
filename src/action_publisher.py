@@ -45,10 +45,11 @@ class ActionPublisher:
     def _publish_action(self):
         rate = rospy.Rate(30)
         while not rospy.is_shutdown():
-            if self._ready:
-                self._pub_new_act.publish(self._action)
-                # self._pub_test.publish(self._end_of_episode)
-                rate.sleep()
+            # if self._ready:
+            self._pub_new_act.publish(self._action)
+            print self._action
+            # self._pub_test.publish(self._end_of_episode)
+            rate.sleep()
 
 if __name__ == "__main__":
 

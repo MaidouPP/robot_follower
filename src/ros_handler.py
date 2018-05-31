@@ -12,7 +12,7 @@ from geometry_msgs.msg import Twist
 from geometry_msgs.msg import Point
 from nav_msgs.msg import Odometry
 from simulation_walk.msg import Laser4
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, Float32
 
 
 class RosHandler:
@@ -23,9 +23,9 @@ class RosHandler:
         self._init = False
 
         self._depth = 1
-        self._length = 2  # SICK TIM561 laser scanner dimension
+        self._length = 5  # SICK TIM561 laser scanner dimension
         # self._state = np.zeros((1, self._length, self._depth), dtype='float32')
-        self._state = np.zeros((1, self._length))
+        self._state = np.zeros((self._length,))
 
         self._reward = 0.0
         self._action = Twist()
@@ -57,6 +57,8 @@ class RosHandler:
             "/new_start", Point, self._gazebo_callback_new_start)
         self._sub_end_traj = rospy.Subscriber(
             "/reach_dest", Bool, self._gazebo_callback_end_traj)
+        self._sub_vel = rospy.Subscriber(
+            "/actor_vel", Float32, self._gazebo_callback_vel)
 
         self._pub_action = rospy.Publisher("/cmd_vel_handler", Twist, queue_size=10)
         self._pub_robot_pos = rospy.Publisher("/gazebo/set_model_state", ModelState, queue_size=10)
@@ -67,6 +69,8 @@ class RosHandler:
         # rospy.init_node("ros_handler", anonymous=True)
 
         self._new_msg_flag = False
+        
+        self._actor_vel = 0.0
 
         # self._publish_action()
 
@@ -76,7 +80,11 @@ class RosHandler:
         # self._state = ranges.reshape((1, self._length, self._depth))
         # self._state[self._state == np.inf] = 30
         # self._state = self._state / 10.0
-        self._state = self._person_pos - self._robot_pos
+
+        self._state[:2] = self._person_pos - self._robot_pos
+        self._state[2:4] = self._normalize_vec(self._person_target - self._person_pos)
+        self._state[4] = self._actor_vel
+        # self._state = self._state.squeeze()
         # self._state = self._state.reshape((1, -1))
         self._reward = self._calculate_reward()
         self._new_msg_flag = True
@@ -93,6 +101,9 @@ class RosHandler:
     def _input_callback_robot_pos(self, data):
         self._robot_pos[0] = data.pose.pose.position.x
         self._robot_pos[1] = data.pose.pose.position.y
+        
+    def _gazebo_callback_vel(self, data):
+        self._actor_vel = data.data
 
     def _gazebo_callback_new_start(self, data):
         # msg = ModelState()
@@ -104,11 +115,18 @@ class RosHandler:
         # print "=============== the target is: ", data
         # print "=============== the human isL ", self._person_pos
         self.end_of_episode = False
-        rospy.sleep(0.2)
+        rospy.sleep(0.3)
         self._calculate_start_pos(data, self._person_pos)
 
     def _gazebo_callback_end_traj(self, data):
         self.end_of_episode = True
+        # tmp_action = Twist()
+        # tmp_action.linear.x = tmp_action.linear.y = \
+        #     tmp_action.linear.z = 0
+        # tmp_action.angular.x = tmp_action.angular.y = \
+        #     tmp_action.angular.z = 0
+        tmp_action = (0, 0)
+        self.publish_action(tmp_action)
 
     def _calculate_start_pos(self, target, actor_pos):
         """
@@ -150,11 +168,12 @@ class RosHandler:
         """
         check if this place is in safe zone for robot
         """
-        pos_ = np.array([pos[0], pos[1]])
-        if pos[0] > 10 or pos[0] < -10:
-            return False
-        elif pos[1] > 10 or pos[1] < -10:
-            return False
+        
+        # pos_ = np.array([pos[0], pos[1]])
+        # if pos[0] > 10 or pos[0] < -10:
+        #     return False
+        # elif pos[1] > 10 or pos[1] < -10:
+        #     return False
         # may need to modify this part because
         # it relates to what map resolution we are using
         # and what map size...
@@ -189,14 +208,14 @@ class RosHandler:
         reward = 0
         # reward += act_punish
 
-#        if not self._valid_pos(self._robot_pos):
-#            self.end_of_episode = True
-#            msg = Bool()
-#            msg.data = True
-#            self._pub_end.publish(msg)
-#
-#            print "Died!!! reward is: ", reward - 20
-#            return reward - 20.0
+        if not self._valid_pos(self._robot_pos):
+           self.end_of_episode = True
+           msg = Bool()
+           msg.data = True
+           self._pub_end.publish(msg)
+
+           print "Died!!! reward is: ", reward - 20
+           return reward - 20.0
 
         distance = np.linalg.norm(v2)
         if distance > 1.0:

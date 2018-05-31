@@ -104,7 +104,17 @@ class ActorNetwork:
                                                         biases_initializer=tf.contrib.layers.xavier_initializer())
 
             with tf.variable_scope("fc2"):
-                out = tf.contrib.layers.fully_connected(fc1, 2,
+                fc2 = tf.contrib.layers.fully_connected(fc1, 128,
+                                                        activation_fn=tf.nn.relu,
+                                                        biases_initializer=tf.contrib.layers.xavier_initializer())
+
+            with tf.variable_scope("fc3"):
+                fc3 = tf.contrib.layers.fully_connected(fc2, 64,
+                                                        activation_fn=tf.nn.relu,
+                                                        biases_initializer=tf.contrib.layers.xavier_initializer())
+
+            with tf.variable_scope("fc4"):
+                out = tf.contrib.layers.fully_connected(fc3, 2,
                                                         activation_fn=None,
                                                         biases_initializer=tf.contrib.layers.xavier_initializer())
                 out = tf.tanh(out)
@@ -121,7 +131,17 @@ class ActorNetwork:
                                                         biases_initializer=tf.contrib.layers.xavier_initializer())
 
             with tf.variable_scope("fc2"):
-                out = tf.contrib.layers.fully_connected(fc1, 2,
+                fc2 = tf.contrib.layers.fully_connected(fc1, 128,
+                                                        activation_fn=tf.nn.relu,
+                                                        biases_initializer=tf.contrib.layers.xavier_initializer())
+
+            with tf.variable_scope("fc3"):
+                fc3 = tf.contrib.layers.fully_connected(fc2, 64,
+                                                        activation_fn=tf.nn.relu,
+                                                        biases_initializer=tf.contrib.layers.xavier_initializer())
+
+            with tf.variable_scope("fc4"):
+                out = tf.contrib.layers.fully_connected(fc3, 2,
                                                         activation_fn=None,
                                                         biases_initializer=tf.contrib.layers.xavier_initializer())
                 out = tf.tanh(out)

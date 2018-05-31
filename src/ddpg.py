@@ -34,7 +34,7 @@ PRE_TRAINED_NETS = False
 
 # If we use a pretrained net
 NET_LOAD_PATH = os.path.join(os.path.dirname(
-    __file__), os.pardir) + "/pre_trained_networks/output-1845000"
+    __file__) + "/../weights/output-858000")
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -91,7 +91,7 @@ class DDPG:
             #     self.viewer = CostmapVisualizer()
 
             # Hardcode input size and action size
-            self.height = 2
+            self.height = 5
             self.width = 1
             self.depth = 1
             self.action_dim = 2

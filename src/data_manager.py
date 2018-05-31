@@ -78,10 +78,10 @@ class DataManager:
 
         # decode feature example
         features = tf.parse_single_example(serialized_experience, features={
-            'state': tf.FixedLenFeature([2], tf.float32),
+            'state': tf.FixedLenFeature([5], tf.float32),
             'action': tf.FixedLenFeature([2], tf.float32),
             'reward': tf.FixedLenFeature([1], tf.float32),
-            'next_state': tf.FixedLenFeature([2], tf.float32),
+            'next_state': tf.FixedLenFeature([5], tf.float32),
             'is_episode_finished': tf.FixedLenFeature([1], tf.int64)})
 
         # state = tf.decode_raw(features['state'], tf.float32)
@@ -94,8 +94,8 @@ class DataManager:
 
         # reshape gridmaps
         # print state.shape
-        state = tf.reshape(state, [2])
-        next_state = tf.reshape(next_state, [2])
+        state = tf.reshape(state, [5])
+        next_state = tf.reshape(next_state, [5])
 
         # batch shuffling is done in a seperate thread
         state_batch, action_batch, reward_batch, next_state_batch, is_episode_finished_batch = tf.train.shuffle_batch(
