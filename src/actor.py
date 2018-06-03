@@ -117,7 +117,7 @@ class ActorNetwork:
                 out = tf.contrib.layers.fully_connected(fc3, 2,
                                                         activation_fn=None,
                                                         biases_initializer=tf.contrib.layers.xavier_initializer())
-                out = tf.tanh(out)
+                out = 0.8*tf.tanh(out)
 
             return out
 
@@ -144,7 +144,7 @@ class ActorNetwork:
                 out = tf.contrib.layers.fully_connected(fc3, 2,
                                                         activation_fn=None,
                                                         biases_initializer=tf.contrib.layers.xavier_initializer())
-                out = tf.tanh(out)
+                out = 0.8*tf.tanh(out)
 
             return out
 

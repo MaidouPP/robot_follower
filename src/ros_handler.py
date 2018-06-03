@@ -69,7 +69,7 @@ class RosHandler:
         # rospy.init_node("ros_handler", anonymous=True)
 
         self._new_msg_flag = False
-        
+
         self._actor_vel = 0.0
 
         # self._publish_action()
@@ -101,7 +101,7 @@ class RosHandler:
     def _input_callback_robot_pos(self, data):
         self._robot_pos[0] = data.pose.pose.position.x
         self._robot_pos[1] = data.pose.pose.position.y
-        
+
     def _gazebo_callback_vel(self, data):
         self._actor_vel = data.data
 
@@ -115,7 +115,7 @@ class RosHandler:
         # print "=============== the target is: ", data
         # print "=============== the human isL ", self._person_pos
         self.end_of_episode = False
-        rospy.sleep(0.3)
+        rospy.sleep(0.5)
         self._calculate_start_pos(data, self._person_pos)
 
     def _gazebo_callback_end_traj(self, data):
@@ -168,7 +168,7 @@ class RosHandler:
         """
         check if this place is in safe zone for robot
         """
-        
+
         # pos_ = np.array([pos[0], pos[1]])
         # if pos[0] > 10 or pos[0] < -10:
         #     return False
@@ -214,8 +214,8 @@ class RosHandler:
            msg.data = True
            self._pub_end.publish(msg)
 
-           print "Died!!! reward is: ", reward - 20
-           return reward - 20.0
+           print "Died!!! reward is: ", reward - 2.0
+           return reward - 2.0
 
         distance = np.linalg.norm(v2)
         if distance > 1.0:

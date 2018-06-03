@@ -18,11 +18,11 @@ import time
 BATCH_SIZE = 32
 
 # How big is our discount factor for rewards
-GAMMA = 0.99
+GAMMA = 0.95
 
 # How does our noise behave (MU = Center value, THETA = How strong is noise pulled to MU, SIGMA = Variance of noise)
 MU = 0.0
-THETA = 0.15
+THETA = 0.05
 SIGMA = 0.05
 
 # Action boundaries
@@ -175,8 +175,8 @@ class DDPG:
                 next_state_batch, \
                 is_episode_finished_batch = self.data_manager.get_next_batch()
 
-            state_batch = np.divide(state_batch, 10.0)
-            next_state_batch = np.divide(next_state_batch, 10.0)
+            # state_batch = np.divide(state_batch, 10.0)
+            # next_state_batch = np.divide(next_state_batch, 10.0)
 
             # Are we visualizing the first state batch for debugging?
             # If so: We have to scale up the values for grey scale before plotting
@@ -258,7 +258,7 @@ class DDPG:
 
         # normalize the state
         state = state.astype(float)
-        state = np.divide(state, 10.0)
+        # state = np.divide(state, 10.0)
 
         # Get the action
         self.action = self.actor_network.get_action(state, old_action)
@@ -267,14 +267,15 @@ class DDPG:
         # Are we using noise?
         if self.noise_flag:
             # scale noise down to 0 at training step 3000000
-            if self.training_step < MAX_NOISE_STEP:
-                self.action += (MAX_NOISE_STEP - self.training_step) / \
-                    MAX_NOISE_STEP * self.exploration_noise.noise()
-            # if action value lies outside of action bounds, rescale the action vector
-            if self.action[0] < A0_BOUNDS[0] or self.action[0] > A0_BOUNDS[1]:
-                self.action *= np.fabs(A0_BOUNDS[0] / self.action[0])
-            if self.action[1] < A0_BOUNDS[0] or self.action[1] > A0_BOUNDS[1]:
-                self.action *= np.fabs(A1_BOUNDS[0] / self.action[1])
+            self.action += 0.8*self.exploration_noise.noise()
+#            if self.training_step < MAX_NOISE_STEP:
+#                self.action += (MAX_NOISE_STEP - self.training_step) / \
+#                    MAX_NOISE_STEP * self.exploration_noise.noise()
+#            # if action value lies outside of action bounds, rescale the action vector
+#            if self.action[0] < A0_BOUNDS[0] or self.action[0] > A0_BOUNDS[1]:
+#                self.action *= np.fabs(A0_BOUNDS[0] / self.action[0])
+#            if self.action[1] < A0_BOUNDS[0] or self.action[1] > A0_BOUNDS[1]:
+#                self.action *= np.fabs(A1_BOUNDS[0] / self.action[1])
 
         # Life q value output for this action and state
         self.print_q_value(state, self.action)

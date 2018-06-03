@@ -136,7 +136,7 @@ class CriticNetwork:
                                                         activation_fn=tf.nn.relu,
                                                         biases_initializer=tf.contrib.layers.xavier_initializer())
                 fc2 = tf.concat([fc2, self.action_input], axis=1)
-            
+
             with tf.variable_scope("fc3"):
                 fc3 = tf.contrib.layers.fully_connected(fc2, 64,
                                                         activation_fn=tf.nn.relu,
@@ -163,7 +163,7 @@ class CriticNetwork:
                                                         activation_fn=tf.nn.relu,
                                                         biases_initializer=tf.contrib.layers.xavier_initializer())
                 fc2 = tf.concat([fc2, self.action_input_target], axis=1)
-            
+
             with tf.variable_scope("fc3"):
                 fc3 = tf.contrib.layers.fully_connected(fc2, 64,
                                                         activation_fn=tf.nn.relu,
